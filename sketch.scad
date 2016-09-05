@@ -1,15 +1,5 @@
-height = 800;
-width = 600;
-depth = 300;
-
-profile_w = 20;
-epsilon = 5;
-
-u_inner_rad = 70;
-u_outter_rad = 20 + inner_rad;
-u_inner_h = 20;
-u_outter_h = 20;
-//rings_z_diff = 15;
+include <params.scad>
+include <util.scad>
 
 
 difference(){
@@ -32,26 +22,13 @@ difference(){
    cube([width-2*profile_w, depth-2*profile_w, height+2*profile_w]);
 }
 
-color("black") 
-   differ
-{
-  translate([width/2, depth/2, height+inner_h])
-  cylinder(r=outter_rad, h=outter_h);
-    
-   
-}
 
+// lower ring:
 color("green")
   translate([width/2, depth/2, height])
-    ring
+    ring(u_main_hole_rad, u_lower_rad, u_lower_h);
 
-
-
-module ring(in_rad, out_rad, height) {
-    difference() {
-        cylinder(r = out_rad, h = height);
-        translate([0,0,epsilon])
-           cylinder(r = in_rad, h = height+2*epsilon);
-    }
-    
-}
+// upper ring:
+color("red")
+  translate([width/2, depth/2, height + u_lower_h + rings_z_dist])
+    ring(u_main_hole_rad, u_upper_rad, u_upper_h);

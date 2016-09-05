@@ -1,18 +1,18 @@
 
-module torus(bigR, cutR)
+module torus(bigR, cutR, fn = 50)
 {
     rotate_extrude(
       convexity = 10, 
-      $fn = 50)
+      $fn = fn)
     translate([bigR, 0, 0])
     circle(r = cutR,
-      $fn = 50);
+      $fn = fn);
 }
 
-module torusQuarter(bigR, cutR, add2Cube = 0)
+module torusQuarter(bigR, cutR, add2Cube = 0, fn = 50)
 {
     intersection() {
-        torus(bigR, cutR);
+        torus(bigR, cutR, fn);
 
         translate([-add2Cube, 
           -add2Cube, -cutR])

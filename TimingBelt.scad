@@ -1,14 +1,9 @@
+include <params.scad>
+
 $fn=100;
 
 eps = 0.05;
 bigSize = 10;
-
-// belt
-belt_width = 5;
-
-// pulley
-pulley_belt_width = belt_width * 1.2;
-
 
 
 // GT2
@@ -272,7 +267,7 @@ module drawDrivePulley(diameter)
 // parts
 //drawTimingBeltByLength(250);
 //drawTimingBeltByDiameter(75);
-//drawDrivePulley(180);
-drawPulley(180, false);
+drawDrivePulley(100);
+//drawPulley(100, false);
 
 
