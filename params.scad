@@ -21,6 +21,25 @@ u_upper_h = 20;
 u_main_hole_rad = 50;
 rings_z_dist = 5;
 
+axis_bot_elev = height - 80;
+axis_top_above_upper_plate = 80;
+
+camera_mount_rad = 250;
+min_camera_z = 400;
+
+slider_pole_w = 8;
+slider_column_w = 80;
+
+// tolerance for holes sliding on column:
+slider_tol = 0.5;
+
+camera_w = 140;
+camera_d = 15;
+camera_h = 40;
+
+relief_depth = 2;
+
+
 
 // Params for main bearing plate
 //   with its two rings:
