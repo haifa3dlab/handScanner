@@ -10,7 +10,7 @@ pulley_belt_width = belt_width * 1.2;
 // General Params for the sketch
 height = 800;
 width = 600;
-depth = 300;
+depth = 400;
 
 profile_w = 20;
 
@@ -20,6 +20,7 @@ u_lower_h = 20;
 u_upper_h = 20;
 u_main_hole_rad = 50;
 rings_z_dist = 5;
+axis_y_offset = 0;
 
 stepper_w = 42.3;
 stepper_box_h = 40;
@@ -30,8 +31,8 @@ stepper_all_h = stepper_box_h + stepper_axis_len;
 axis_bot_elev = height - 85;
 axis_top_above_upper_plate = 80;
 
-camera_mount_rad = 250;
-min_camera_z = 400;
+camera_mount_rad = 300;
+min_camera_z = 300;
 
 slider_pole_w = 8;
 slider_column_w = 80;

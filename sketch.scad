@@ -79,6 +79,9 @@ module axis() {
     cube([profile_w, profile_w, axis_h]);
 }
 
+translate([width/2, depth/2 + axis_y_offset, 0])
+rotate([0,0, 40]) 
+translate([-width/2, -depth/2, 0]){
 color("black") axis();
 
 // main horizontal beam:
@@ -100,8 +103,24 @@ color("black")
              depth/2  - profile_w/2,
              axis_bot_elev])
     cube([stepper_w, stepper_all_h - profile_w/2,  profile_w]);
+    
+    color("black")
+  translate([width/2 - camera_mount_rad, depth/2, min_camera_z])
+    slideColumn(camera_h);
+
+color("black")
+  translate([width/2 + camera_mount_rad, depth/2, min_camera_z])
+    slideColumn(3*camera_h);
+
+color("red")
+  translate([width/2 - camera_mount_rad + slider_d,
+             depth/2 - camera_w/2,
+             min_camera_z + slider_column_h/2 - camera_h/2])
+    rotate([0, 0, 90])
+      camera();
 
 
+}
 slider_w = slider_column_w + 2*slider_pole_w;
 slider_d = 3*slider_pole_w;
 
@@ -168,20 +187,6 @@ module camera() {
   }
 }
 
-color("black")
-  translate([width/2 - camera_mount_rad, depth/2, min_camera_z])
-    slideColumn(camera_h);
-
-color("black")
-  translate([width/2 + camera_mount_rad, depth/2, min_camera_z])
-    slideColumn(3*camera_h);
-
-color("red")
-  translate([width/2 - camera_mount_rad + slider_d,
-             depth/2 - camera_w/2,
-             min_camera_z + slider_column_h/2 - camera_h/2])
-    rotate([0, 0, 90])
-      camera();
 
 
 // hand holder:

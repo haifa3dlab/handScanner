@@ -37,9 +37,10 @@ module upper_ring() {
   union() {
     translate([0, 0, ring_elev + ring_h - epsilon])
       difference() {
-        scale([1, 1, 1.2])
-          drawPulley(2*ring_out_r, false);
+        //scale([1, 1, 1.2])
+          //drawPulley(2*ring_out_r, false);
         
+		cylinder(r=ring_out_r, h=10);
         translate([0, 0, +9])
           cylinder(r = mainHole_r, h = 20, center = true, $fn = 50);
       }
