@@ -1,5 +1,6 @@
 include <params.scad>
 include <util.scad>
+use <torusPart.scad>
 
 // shell skeleton:
 difference(){
@@ -28,10 +29,49 @@ color("green")
   translate([width/2, depth/2, height])
     ring(u_main_hole_rad, u_lower_rad, u_lower_h);
 
+// lower ring mount:
+translate([width/2, 0, height - profile_w]) {
+  union() {
+    translate([-u_lower_rad, 0, 0])
+      cube([profile_w, depth, profile_w]);
+
+    translate([u_lower_rad - profile_w, 0, 0])
+      cube([profile_w, depth, profile_w]);
+  }
+}
+
+upper_ring_elev = height + u_lower_h + rings_z_dist;
+
 // upper ring:
 color("red")
-  translate([width/2, depth/2, height + u_lower_h + rings_z_dist])
+  translate([width/2, depth/2, upper_ring_elev])
     ring(u_main_hole_rad, u_upper_rad, u_upper_h);
+
+
+module stepper() {
+  union() {
+    cube([stepper_w, stepper_w, stepper_box_h]);
+
+    translate([stepper_w/2, stepper_w/2, stepper_box_h - epsilon])
+      cylinder(r = stepper_axis_rad,
+        h = stepper_axis_len + epsilon, $fn = 50);
+  }
+}
+
+
+upper_stepper_x = width/2 - u_upper_rad - 1.5*stepper_w;
+
+// upper stepper:
+color("red") {
+  translate([upper_stepper_x,
+             depth/2,
+             upper_ring_elev + u_upper_h - stepper_all_h])
+    stepper();
+}
+
+// upper stepper mount:
+translate([upper_stepper_x - profile_w, 0, height - profile_w])
+      cube([profile_w, depth, profile_w]);
 
 module axis() {
   axis_h = height - axis_bot_elev + axis_top_above_upper_plate;
@@ -41,9 +81,25 @@ module axis() {
 
 color("black") axis();
 
+// main horizontal beam:
 color("black")
   translate([width/2 - camera_mount_rad, depth/2 - profile_w/2, axis_bot_elev])
     cube([2*camera_mount_rad, profile_w,  profile_w]);
+
+// lower stepper
+color("red")
+  translate([width/2 - stepper_w - profile_w,
+             depth/2 + stepper_all_h - profile_w, 
+             axis_bot_elev + profile_w])
+    rotate([90, 0, 0])
+      stepper();
+
+// lower stepper mount:
+color("black")
+  translate([width/2 - stepper_w - profile_w,
+             depth/2  - profile_w/2,
+             axis_bot_elev])
+    cube([stepper_w, stepper_all_h - profile_w/2,  profile_w]);
 
 
 slider_w = slider_column_w + 2*slider_pole_w;
@@ -120,12 +176,29 @@ color("black")
   translate([width/2 + camera_mount_rad, depth/2, min_camera_z])
     slideColumn(3*camera_h);
 
-//color("red") Y_cylinder(profile_w/2, slider_column_w);
-
 color("red")
   translate([width/2 - camera_mount_rad + slider_d,
              depth/2 - camera_w/2,
              min_camera_z + slider_column_h/2 - camera_h/2])
     rotate([0, 0, 90])
       camera();
+
+
+// hand holder:
+color("green") {
+  translate([width/2, depth/2, hand_support_cutR])
+    torus(hand_support_bigR, hand_support_cutR);
+
+  translate([width/2, depth/2, hand_lock_elev + hand_lock_cutR])
+    torus(hand_lock_bigR, hand_lock_cutR);
+
+  translate([width/2, depth/2 + hand_lock_bigR, 0])
+    cylinder(r = hand_lock_cutR,
+             h = hand_lock_elev + hand_lock_cutR,
+             $fn = 50);
+
+  translate([width/2 - profile_w/2,
+             depth/2 + hand_lock_bigR, 0])
+    cube([profile_w, depth/2 - hand_lock_bigR, profile_w]);
+}
 

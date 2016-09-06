@@ -21,7 +21,13 @@ u_upper_h = 20;
 u_main_hole_rad = 50;
 rings_z_dist = 5;
 
-axis_bot_elev = height - 80;
+stepper_w = 42.3;
+stepper_box_h = 40;
+stepper_axis_rad = 2.5;
+stepper_axis_len = 24+2; // above box
+stepper_all_h = stepper_box_h + stepper_axis_len;
+
+axis_bot_elev = height - 85;
 axis_top_above_upper_plate = 80;
 
 camera_mount_rad = 250;
@@ -39,6 +45,11 @@ camera_h = 40;
 
 relief_depth = 2;
 
+hand_support_bigR = 50;
+hand_support_cutR = 20;
+hand_lock_bigR = 65;
+hand_lock_cutR = 10;
+hand_lock_elev = 140;
 
 
 // Params for main bearing plate
