@@ -60,6 +60,7 @@ mainHole_r = 20;
 wall_w = 4;
 
 ring_base_w = 2*glassBall_r + 2*wall_w;
+upper_ring_out_r = mainHole_r + ring_base_w;
 
 // the angle (from horisontal) of 
 //   the force ransform of the glassBalls: 
@@ -79,4 +80,26 @@ lower_ring_h = ring_base_w;
 max_r = mainHole_r + ring_base_w + 30;
 
 
+// when using bearings:
+bearing_in_d = 8;
+bearing_out_d = 22;
+bearing_h = 7;
+
+big_washer_d = 19;
+
+
+// Params for mounted camera slider:
+profile2020_w = 20;
+profile2020_tol = 0; // tolerance on each side (0 is OK)
+
+M3hole_d = 3.3;
+M4hole_d = 4.3;
+hole_wall_dist = 4;
+
+rod_d = 8;
+rod_holder_tol = 0; // on each side
+rod_holder_h = 4*wall_w;
+
+holder_bend_len = 4;
+holder_bend_close_gap = 3 + 2*rod_holder_tol;
 

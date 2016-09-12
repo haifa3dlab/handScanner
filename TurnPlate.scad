@@ -31,16 +31,16 @@ module lower_ring() {
 }
 
 module upper_ring() {
-  ring_out_r = mainHole_r + ring_base_w;
   ring_h = ring_base_w;
   ring_elev = lower_ring_h - 2*glassBall_r;
   union() {
     translate([0, 0, ring_elev + ring_h - epsilon])
       difference() {
-        //scale([1, 1, 1.2])
-          //drawPulley(2*ring_out_r, false);
-        
-		cylinder(r=ring_out_r, h=10);
+        scale([1, 1, 1.2])
+          import("pulley.stl", convexity=4);
+          // drawPulley(2*upper_ring_out_r, false);
+          // or: cylinder(r=upper_ring_out_r, h=8);
+
         translate([0, 0, +9])
           cylinder(r = mainHole_r, h = 20, center = true, $fn = 50);
       }
@@ -49,7 +49,7 @@ module upper_ring() {
       difference() {
         translate([0, 0, ring_elev])
           ring(mainHole_r, 
-               ring_out_r,
+               upper_ring_out_r,
                ring_h,
                fn = 100);
   
