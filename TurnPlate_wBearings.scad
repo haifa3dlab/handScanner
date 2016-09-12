@@ -4,9 +4,9 @@ include <util.scad>
 // params:
 rings_bearing_angle = 45;
 
-bearing_holder_clip_w = 0.5;
+bearing_holder_clip_w = 1.5;
 bearing_touch_tol = 0.2; // tolerance to objects which touch and move with the bearing surface.
-bearing_rotate_tol = 2; //  tolerance to objects which the bearing rotates relative to them
+bearing_rotate_tol = 3; //  tolerance to objects which the bearing rotates relative to them
 bearing_rod_l = 3*bearing_h + bearing_holder_clip_w;
 bearing_rod_bottom_l = bearing_rod_l - bearing_h/2 + bearing_holder_clip_w;
 bearing_rod_angle = 90 - rings_bearing_angle; // to horisontal rings
@@ -67,12 +67,15 @@ module first_bearing_rod()
     rotate([0, (90 - bearing_rod_angle), 0])
   difference() {
     union() {
-      cylinder(r = bearing_in_d/2, h = bearing_rod_l, center = true, $fn = 50);
+      cylinder(r = bearing_in_d/2 - bearing_rod_push_tol, h = bearing_rod_l, center = true, $fn = 50);
 
+      // clips on the tip of the rod to hold bearing is place:
+      /*
       translate([0, 0, bearing_rod_l/2 - bearing_holder_clip_w])
         cylinder(r1 = bearing_in_d/2,
                  r2 = bearing_in_d/2 + bearing_holder_clip_w,
                  h = bearing_holder_clip_w, $fn = 50);
+      */
 
       translate([0, 0, -bearing_rod_l/2])
         cylinder(r = bearing_rod_max_r,
@@ -155,13 +158,13 @@ module lower_ring() {
         fasten_plate(fasten_plate_l,
                      fasten_plate_w,
                      fasten_plate_h,
-                     M4hole_d); 
+                     M4hole_d/2); 
       
       translate([0, lower_ring_out_r - fasten_plate_w, 0])
         fasten_plate(fasten_plate_l,
                      fasten_plate_w,
                      fasten_plate_h,
-                     M4hole_d); 
+                     M4hole_d/2); 
     }
     
     // central hole:
@@ -173,10 +176,6 @@ module lower_ring() {
   }
 }
 
-color("green") lower_ring();
-
-//color("black") all_bearing_rods();
-
 /*
 // test bearings_center rad and height:
 color("blue") 
@@ -186,3 +185,12 @@ color("blue")
            fn = 100);
 */
 
+//color("green") lower_ring();
+
+//color("black") all_bearing_rods();
+
+
+color("black")
+  rotate([0, 45, 0])
+    translate([0, 0, 20])
+      first_bearing_rod();
