@@ -37,7 +37,7 @@ module upper_ring() {
     translate([0, 0, ring_elev + ring_h - epsilon])
       difference() {
         scale([1, 1, 1.2])
-          import("pulley.stl", convexity=4);
+          import("pulley.stl", convexity=4); // create using make_pulley.scad
           // drawPulley(2*upper_ring_out_r, false);
           // or: cylinder(r=upper_ring_out_r, h=8);
 

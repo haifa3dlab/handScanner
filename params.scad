@@ -8,7 +8,7 @@ pulley_belt_width = belt_width * 1.2;
 
 
 // General Params for the sketch
-height = 800;
+height = 700;
 width = 600;
 depth = 400;
 
@@ -96,10 +96,24 @@ M3hole_d = 3.3;
 M4hole_d = 4.3;
 hole_wall_dist = 4;
 
+prof2020_fasten_plate_l = hole_wall_dist + wall_w + M4hole_d;
+
+no_bend_beam_w = 2*wall_w;
+
+fasten_plate_hole_dist = 10;
+fasten_plate_l = 100;
+fasten_plate_w = 120;
+fasten_plate_h = wall_w;
+
 rod_d = 8;
 rod_holder_tol = 0; // on each side
+rod_holder_fasten_block_l = 2*hole_wall_dist +
+  2*fasten_plate_hole_dist + 2*M3hole_d/2;
+rod_holder_fasten_block_w = 3*wall_w;
 rod_holder_h = 4*wall_w;
+rod_holder_fasten_h = 4*wall_w; // only the back fastener
 
 holder_bend_len = 4;
 holder_bend_close_gap = 3 + 2*rod_holder_tol;
 
+stepper_holder_l = 4*wall_w;

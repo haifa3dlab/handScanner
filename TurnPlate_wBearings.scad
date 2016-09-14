@@ -29,13 +29,31 @@ bearings_center_z = wall_w +
 // Radious at which the upper ring
 //   touches the point at the bearing 
 //   which is closest to the center axis of the rings:
-upper_ring_bearing_touch_r = bearings_center_r - 
-  bearing_out_d/2 * cos(rings_bearing_angle);
+upper_ring_bearing_touch_r = bearings_center_r
+  - bearing_out_d/2 * cos(rings_bearing_angle)
+  - bearing_h/2 * sin(90 - rings_bearing_angle);
 
-wall_bearing_center_z_dist = 
+wall_bearing_center_z_dist =
   wall_w * tan(rings_bearing_angle) +
   bearing_h/2 / sin(90 - rings_bearing_angle) +
   bearing_rotate_tol;
+
+// the height difference between where
+//   the bearing touches upper ring and
+upper_ring_touch_bearing_center_diff_z =
+  bearing_out_d/2 * sin(rings_bearing_angle) -
+  bearing_h/2 * sin(90 - rings_bearing_angle);
+
+// tolerance of the height at which
+//   upper_ring touches bearing:
+bearing_touch_z_tol = 1;
+
+// the part of upper ring which is
+//   vertical and goes under the bearing touch point
+upper_ring_under_bearing_z =
+  upper_ring_touch_bearing_center_diff_z -
+  bearing_rotate_tol;
+
 
 echo("wall_bearing_center_z_dist = ", wall_bearing_center_z_dist);
 
@@ -176,6 +194,44 @@ module lower_ring() {
   }
 }
 
+
+upper_ring_slope_h =
+  bearing_h * sin(90 - bearing_rod_angle) +
+  2*bearing_touch_z_tol;
+
+upper_ring_h =
+  upper_ring_under_bearing_z +
+  upper_ring_slope_h + wall_w;
+
+upper_ring_slope_out_r =
+  upper_ring_bearing_touch_r +
+  bearing_h * cos(90 - bearing_rod_angle);
+
+module upper_ring_tst() {
+  translate([0, 0, bearings_center_z + bearing_rotate_tol])
+  difference() {
+    union() {
+      cylinder(r = upper_ring_bearing_touch_r,
+               h = upper_ring_under_bearing_z, $fn = 100);
+
+      translate([0, 0, upper_ring_under_bearing_z - epsilon])
+        cylinder(r1 = upper_ring_bearing_touch_r,
+                 r2 = upper_ring_slope_out_r,
+                 h = upper_ring_slope_h + 2*epsilon,
+                 $fn = 100);
+
+      translate([0, 0, upper_ring_under_bearing_z + upper_ring_slope_h])
+        cylinder(r = upper_ring_slope_out_r + wall_w,
+                 h = wall_w, $fn = 100);
+    }
+
+    // central hole:
+    translate([0, 0, -epsilon]);
+      cylinder(r = mainHole_r,
+               h = upper_ring_h + 2*epsilon, $fn = 100);
+  }
+}
+
 /*
 // test bearings_center rad and height:
 color("blue") 
@@ -189,8 +245,11 @@ color("blue")
 
 //color("black") all_bearing_rods();
 
+color("red") upper_ring_tst();
 
+/*
 color("black")
   rotate([0, 45, 0])
     translate([0, 0, 20])
       first_bearing_rod();
+*/

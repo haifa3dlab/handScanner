@@ -5,7 +5,7 @@ include <util.scad>
 
 module prof2020_holder() {
   holder_w = profile2020_w + 2*wall_w; 
-  holder_l = profile2020_w + 2*(hole_wall_dist + wall_w + M4hole_d);
+  holder_l = profile2020_w + 2*prof2020_fasten_plate_l;
   union() {
     difference() {
       cube([profile2020_w, holder_w, holder_w], center = true);
@@ -26,10 +26,30 @@ module prof2020_holder() {
           cylinder(r = M4hole_d/2, h = wall_w+2*epsilon, center = true, $fn = 50);
     }
 
+/* small test cubes on the sides - unneeded:
     translate([0, -(holder_w/2 + wall_w - epsilon), 0])
       cube(2*wall_w, center = true);
     translate([0, holder_w/2 + wall_w - epsilon, 0])
       cube(2*wall_w, center = true);
+*/
+    fasten_w = 4*fasten_plate_hole_dist + M3hole_d + 2*wall_w;
+    fasten_l = fasten_plate_hole_dist + M3hole_d + 2*wall_w;
+    fasten_h = 2*wall_w;
+    translate([0, 0, holder_w/2 - fasten_h/2])
+      difference() {
+        cube([fasten_l, fasten_w, fasten_h], center = true);
+
+        cube([fasten_l+2*epsilon, profile2020_w, fasten_h+2*epsilon], center = true);
+
+        translate([-fasten_l/2 + wall_w + M3hole_d/2,
+                   -fasten_w/2 + wall_w + M3hole_d/2, -fasten_h/2 - epsilon])
+          fasten_holes_rect(2, 1, fasten_plate_hole_dist,
+                            M3hole_d/2, 3*fasten_h + 2*epsilon);
+        translate([-fasten_l/2 + wall_w + M3hole_d/2,
+                   fasten_w/2 - (wall_w + M3hole_d/2), -fasten_h/2 - epsilon])
+          fasten_holes_rect(2, 1, fasten_plate_hole_dist,
+                            M3hole_d/2, 3*fasten_h + 2*epsilon);
+    }
   }
 }
 
@@ -87,14 +107,32 @@ module rod_holder() {
       cube([holder_bend_len + wall_w,
             wall_w, rod_holder_h]);
     
-    // back plate:
-    translate([-4*wall_w - rod_holder_out_r - holder_bend_len, -1.5*wall_w, 0]) {
+    // back fasten block:
+    translate([-rod_holder_fasten_block_l - rod_holder_out_r - holder_bend_len, -1.5*wall_w, 0]) {
       difference() {  
-        cube([4*wall_w, 3*wall_w, rod_holder_h]);
-      
-        translate([2*wall_w, 1.5*wall_w, -epsilon])
-          cylinder(r = M4hole_d/2,
-                   h = rod_holder_h + 2*epsilon, $fn = 50);
+        cube([rod_holder_fasten_block_l,
+              rod_holder_fasten_block_w,
+              rod_holder_fasten_h]);
+
+        // back alongated hole for fastening in var angles:
+        translate([hole_wall_dist + M3hole_d/2,
+                   rod_holder_fasten_block_w/2, -epsilon])
+          cylinder(r = M3hole_d/2,
+                   h = rod_holder_fasten_h + 2*epsilon, $fn = 50);
+        translate([hole_wall_dist + M3hole_d/2,
+                   rod_holder_fasten_block_w/2 - M3hole_d/2, -epsilon])
+          cube([fasten_plate_hole_dist, M3hole_d,
+                   rod_holder_fasten_h + 2*epsilon]);
+        translate([hole_wall_dist + M3hole_d/2 + fasten_plate_hole_dist,
+                   rod_holder_fasten_block_w/2, -epsilon])
+          cylinder(r = M3hole_d/2,
+                   h = rod_holder_fasten_h + 2*epsilon, $fn = 50);
+
+        translate([hole_wall_dist + M3hole_d/2 + 2*fasten_plate_hole_dist,
+                   // rod_holder_fasten_block_l - (hole_wall_dist + M3hole_d/2),
+                   1.5*wall_w, -epsilon])
+          cylinder(r = M3hole_d/2,
+                   h = rod_holder_fasten_h + 2*epsilon, $fn = 50);
       }
     }
     
@@ -120,11 +158,128 @@ module rod_holder() {
 }
 
 
-// results:
+module fasten_holes_rect(nx, ny, hole_dist, hole_r, hole_h) {
+  for (ix = [0:nx - 1])
+    for (iy = [0:ny - 1]) {
+      translate([ix*hole_dist,
+                 iy*hole_dist, 0])
+        cylinder(r = hole_r, h = hole_h, $fn = 50);
+  }
+}
+
+module fasten_holes_interleave(nx, ny, hole_dist, hole_r, hole_h) {
+  fasten_holes_rect(nx, ny, hole_dist, hole_r, hole_h);
+  translate([hole_dist/2,
+             hole_dist/2, 0])
+    fasten_holes_rect(nx, ny, hole_dist, hole_r, hole_h);
+}
+
+module fasten_plate() {
+  union()
+    difference() {
+      cube([fasten_plate_l, fasten_plate_w, fasten_plate_h]);
+
+      translate([no_bend_beam_w + wall_w,
+                 no_bend_beam_w + wall_w, -epsilon])
+          import("fasten_holes_8x10_tst1.stl", convexity=4);
+
+      // square hole for belt:
+      translate([no_bend_beam_w + stepper_w,
+                 no_bend_beam_w + fasten_plate_hole_dist + 2*wall_w, -epsilon])
+        cube([fasten_plate_l, stepper_w - 2*wall_w, fasten_plate_h + 2*epsilon]);
+
+      // square hole2 for prof2020 connector nuts:
+      translate([2*no_bend_beam_w,
+                 fasten_plate_w - no_bend_beam_w - wall_w -
+                   prof2020_fasten_plate_l - profile2020_w, -epsilon])
+        union() {
+          cube([fasten_plate_l - 4*no_bend_beam_w,
+                prof2020_fasten_plate_l/2,
+                fasten_plate_h + 2*epsilon]);
+          translate([0, prof2020_fasten_plate_l/2 + profile2020_w, 0])
+            cube([fasten_plate_l - 4*no_bend_beam_w,
+                  prof2020_fasten_plate_l/2,
+                  fasten_plate_h + 2*epsilon]);
+        }
+    }
+
+    cube([fasten_plate_l, no_bend_beam_w, no_bend_beam_w]);
+    cube([no_bend_beam_w, fasten_plate_w, no_bend_beam_w]);
+    translate([0, fasten_plate_w - no_bend_beam_w, 0])
+          cube([fasten_plate_l, no_bend_beam_w, no_bend_beam_w]);
+    translate([fasten_plate_l - no_bend_beam_w, 0, 0])
+          cube([no_bend_beam_w, fasten_plate_w, no_bend_beam_w]);
+}
+
+
+module stepper_holder() {
+  difference() {
+    union() {
+      translate([0, 0, (stepper_w + wall_w)/2])
+        cube([stepper_w + 2*wall_w,
+              stepper_holder_l,
+              stepper_w + wall_w], center = true);
+
+      translate([0, 0, wall_w])
+        cube([stepper_w + 8*wall_w, stepper_holder_l,
+              2*wall_w], center = true);
+    }
+
+    translate([0, 0, stepper_w/2 - epsilon])
+      cube([stepper_w,
+            stepper_holder_l + 2*epsilon,
+            stepper_w + epsilon], center = true);
+
+    translate([-3*fasten_plate_hole_dist, 0, -epsilon])
+      fasten_holes_rect(2, 1, 6*fasten_plate_hole_dist,
+                        M3hole_d/2, 2*wall_w + 2*epsilon);
+  }
+}
+
+module prof2020_holder_to_table() {
+  difference() {
+    union() {
+      translate([0, 0, (profile2020_w + wall_w)/2])
+        cube([profile2020_w + 2*wall_w,
+              stepper_holder_l,
+              profile2020_w + wall_w], center = true);
+
+      translate([0, 0, 0.75*wall_w])
+        cube([profile2020_w + 9*wall_w, stepper_holder_l,
+              1.5*wall_w], center = true);
+    }
+
+    translate([0, 0, profile2020_w/2 - 3*epsilon])
+      cube([profile2020_w,
+            stepper_holder_l + 2*epsilon,
+            profile2020_w - 4*epsilon], center = true);
+
+    translate([-2*fasten_plate_hole_dist, 0, -epsilon])
+      fasten_holes_rect(2, 1, 4*fasten_plate_hole_dist,
+                        M4hole_d/2, 2*wall_w + 2*epsilon);
+  }
+}
+
+
+// testing:
 
 //color("black") rod_holder_ring();
 
-color("blue") prof2020_holder();
+//fasten_holes_interleave(10, 10, fasten_plate_hole_dist, M3hole_d/2, fasten_plate_h + 2*epsilon);
+
+
+// results:
+
+//color("blue") prof2020_holder();
 
 //color("green") rod_holder();
+
+// generate separately file "fasten_holes_8x10.stl":
+//fasten_holes_interleave(8, 10, fasten_plate_hole_dist, M3hole_d/2, fasten_plate_h + 2*epsilon);
+
+//color("black") fasten_plate();
+
+//color("red") stepper_holder();
+
+color("white") prof2020_holder_to_table();
 
