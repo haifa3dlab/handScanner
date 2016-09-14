@@ -53,7 +53,7 @@ hand_lock_cutR = 10;
 hand_lock_elev = 140;
 
 
-// Params for main bearing plate
+// Params for main rotation plate
 //   with its two rings:
 glassBall_r = 8;
 mainHole_r = 20;
@@ -78,6 +78,11 @@ lower_ring_h = ring_base_w;
 
 // maximum radious of all rings in this model:
 max_r = mainHole_r + ring_base_w + 30;
+
+pulley_real_h = 9.2;
+
+usb_hole_l = 16;
+usb_hole_w = 8;
 
 
 // when using bearings:
@@ -117,3 +122,10 @@ holder_bend_len = 4;
 holder_bend_close_gap = 3 + 2*rod_holder_tol;
 
 stepper_holder_l = 4*wall_w;
+
+linear_bearing_in_d = 8;
+linear_bearing_out_d = 15;
+linear_bearing_holder_wall_w = 3;
+linear_bearing_holder_gap_w = 1;
+linear_bearing_holder_tol = 0; //-0.05;
+

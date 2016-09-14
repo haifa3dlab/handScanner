@@ -273,6 +273,20 @@ module prof2020_holder_to_table() {
   }
 }
 
+module linear_bearing_holder_tst(tol)
+{
+  in_r = linear_bearing_out_d/2 + tol;
+  out_r = in_r + linear_bearing_holder_wall_w;
+  ring_h = 10;
+  difference() {
+    ring(in_r, out_r, ring_h);
+
+    translate([0, 0, -epsilon])
+      cube([out_r + linear_bearing_holder_gap_w, // make sure it penetrates the ring
+            linear_bearing_holder_gap_w,
+            ring_h + 2*epsilon]);
+  }
+}
 
 // testing:
 
@@ -296,4 +310,9 @@ module prof2020_holder_to_table() {
 
 //color("white") prof2020_holder_to_table();
 
-color("black") simple_fasten_plate(8, 8, wall_w);
+//color("black") simple_fasten_plate(8, 8, wall_w);
+
+//color("green") linear_bearing_holder_tst(linear_bearing_holder_tol);
+
+color("black") linear_bearing_holder_tst(0);
+

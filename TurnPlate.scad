@@ -36,15 +36,35 @@ module upper_ring() {
   union() {
     translate([0, 0, ring_elev + ring_h - epsilon])
       difference() {
-        scale([1, 1, 1.2])
-          import("pulley.stl", convexity=4); // create using make_pulley.scad
-          // drawPulley(2*upper_ring_out_r, false);
-          // or: cylinder(r=upper_ring_out_r, h=8);
-
-        translate([0, 0, +9])
-          cylinder(r = mainHole_r, h = 20, center = true, $fn = 50);
-      }
+        union() {
+          // belt slide stopper from above:
+          belt_slide_stopper(upper_ring_out_r, wall_w, true);
+  
+          translate([0, 0, wall_w - epsilon])
+            scale([1, 1, 1.2])
+              import("pulley.stl", convexity=4);
+              // create using make_pulley.scad
+              // drawPulley(2*upper_ring_out_r, false);
+              // or: cylinder(r=upper_ring_out_r, h=7.8);
+  
+          // belt slide stopper from above:
+          translate([0, 0, wall_w + pulley_real_h])
+            belt_slide_stopper(upper_ring_out_r, wall_w, false);        
+        }
+        pulley_part_h = pulley_real_h + 2*wall_w;
     
+        // central hole:
+        translate([0, 0, pulley_part_h/2 - epsilon]) 
+          union() {
+            cube([profile2020_w, profile2020_w,
+                  pulley_part_h + 1], center = true);
+    
+            rotate([0, 0, 45])
+            translate([(mainHole_r + profile2020_w)/2, 0, 0]) // middle of wall
+              cube([usb_hole_w, usb_hole_l,
+                    pulley_part_h + 1], center = true);
+          }
+        }
     intersection() {
       difference() {
         translate([0, 0, ring_elev])

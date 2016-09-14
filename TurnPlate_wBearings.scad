@@ -1,20 +1,21 @@
 include <params.scad>
 include <util.scad>
+use <TimingBelt.scad>
 
 // params:
 rings_bearing_angle = 45;
 
 bearing_holder_clip_w = 1.5;
 bearing_touch_tol = 0.2; // tolerance to objects which touch and move with the bearing surface.
-bearing_rotate_tol = 3; //  tolerance to objects which the bearing rotates relative to them
+bearing_rotate_tol = 0.8; //  tolerance to objects which the bearing rotates relative to them
 bearing_rod_l = 3*bearing_h + bearing_holder_clip_w;
-bearing_rod_bottom_l = bearing_rod_l - bearing_h/2 + bearing_holder_clip_w;
+bearing_rod_bottom_l = bearing_rod_l - bearing_h/2 - bearing_holder_clip_w;
 bearing_rod_angle = 90 - rings_bearing_angle; // to horisontal rings
 // width of the shelf of the bearing_rod
 //   which stops the bearing to slide down it.
 bearing_rod_stop_shelf_w = 1.5;
 bearing_rod_max_r = bearing_in_d/2 + bearing_rod_stop_shelf_w;
-bearing_rod_push_tol = 0.1;
+bearing_rod_push_tol = 0.05;
 
 // Distance of the center of each bearing
 //   from rings' axis: 
@@ -52,7 +53,7 @@ bearing_touch_z_tol = 1;
 //   vertical and goes under the bearing touch point
 upper_ring_under_bearing_z =
   upper_ring_touch_bearing_center_diff_z -
-  bearing_rotate_tol;
+  2*bearing_rotate_tol;
 
 
 echo("wall_bearing_center_z_dist = ", wall_bearing_center_z_dist);
@@ -62,8 +63,10 @@ module ring_cut_conus(bot_r) {
 	cylinder(h = conus_h, r1 = 0, r2 = bot_r);
 }
 
-module bearing() {
-  ring(bearing_in_d/2, bearing_out_d/2, bearing_h);
+module bearing() 
+{ // centralized:
+  translate([0, 0, -bearing_h/2])
+    ring(bearing_in_d/2, bearing_out_d/2, bearing_h);
 }
 
 
@@ -78,6 +81,21 @@ rod_center_z = wall_w +
   bearing_rod_l/2 * sin(bearing_rod_angle) +
   bearing_rod_max_r * sin(90 - bearing_rod_angle);
 
+module first_bearing_in_place()
+{
+  translate([bearings_center_r, 0, bearings_center_z])
+    rotate([0, rings_bearing_angle, 0])
+      bearing();
+}
+
+module all_bearings() {
+  for (i = [0:3])
+  {
+    angle = i*90;        
+    rotate([0,0,angle])
+      first_bearing_in_place();
+  }
+}
 
 module first_bearing_rod()
 {
@@ -195,42 +213,95 @@ module lower_ring() {
 }
 
 
-upper_ring_slope_h =
-  bearing_h * sin(90 - bearing_rod_angle) +
-  2*bearing_touch_z_tol;
+module belt_slide_stopper(in_r, height, is_below_belt)
+{
+  if (is_below_belt) {
+    cylinder(r1 = in_r + 2*height, r2 = in_r,
+           h = height, $fn = 100);
+  } else {
+    cylinder(r1 = in_r, r2 = in_r + 2*height,
+           h = height, $fn = 100);
+  }
+}
+
+upper_ring_slope_len =
+  bearing_h + 2*bearing_touch_z_tol;
+
+upper_ring_slope_h = upper_ring_slope_len * sin(90 - bearing_rod_angle);
+
+horis_ring_h = wall_w/2;
 
 upper_ring_h =
-  upper_ring_under_bearing_z +
-  upper_ring_slope_h + wall_w;
+  upper_ring_under_bearing_z
+  + upper_ring_slope_h
+  + horis_ring_h
+  + 2*wall_w
+  + pulley_real_h;
 
 upper_ring_slope_out_r =
   upper_ring_bearing_touch_r +
-  bearing_h * cos(90 - bearing_rod_angle);
+  upper_ring_slope_len * cos(90 - bearing_rod_angle);
 
-module upper_ring_tst() {
-  translate([0, 0, bearings_center_z + bearing_rotate_tol])
+
+module upper_ring() {
+  translate([0, 0, bearings_center_z + 2*bearing_rotate_tol])
   difference() {
     union() {
+      // lower vertical ring
       cylinder(r = upper_ring_bearing_touch_r,
                h = upper_ring_under_bearing_z, $fn = 100);
 
+      // slanted ring
       translate([0, 0, upper_ring_under_bearing_z - epsilon])
         cylinder(r1 = upper_ring_bearing_touch_r,
                  r2 = upper_ring_slope_out_r,
-                 h = upper_ring_slope_h + 2*epsilon,
+                 h =  upper_ring_slope_h + 2*epsilon,
                  $fn = 100);
 
-      translate([0, 0, upper_ring_under_bearing_z + upper_ring_slope_h])
-        cylinder(r = upper_ring_slope_out_r + wall_w,
-                 h = wall_w, $fn = 100);
+      // horisontal bearing stopper from above:
+      horis_ring_z = upper_ring_under_bearing_z + upper_ring_slope_h;
+      translate([0, 0, horis_ring_z - epsilon])
+        cylinder(r = upper_ring_slope_out_r + 2*wall_w,
+                 h = horis_ring_h + 2*epsilon, $fn = 100);
+
+      // belt slide stopper from above:
+      translate([0, 0, horis_ring_z + horis_ring_h - epsilon])
+        belt_slide_stopper(upper_ring_slope_out_r, 
+                           wall_w + 2*epsilon, true);
+        
+      // pulley teeth ring:
+      translate([0, 0, horis_ring_z + horis_ring_h + wall_w - epsilon])
+        scale([1, 1, 1.2])
+          import("pulley_r35.3.stl", convexity=4);
+          // create using drawPulley(2*upper_ring_slope_out_r, false) below
+          // cylinder(r=upper_ring_slope_out_r, h=7.8);
+
+      // belt slide stopper from above:
+      translate([0, 0, horis_ring_z + horis_ring_h + wall_w + pulley_real_h - 1])
+        belt_slide_stopper(upper_ring_slope_out_r, wall_w, false);
     }
 
     // central hole:
-    translate([0, 0, -epsilon]);
-      cylinder(r = mainHole_r,
-               h = upper_ring_h + 2*epsilon, $fn = 100);
-  }
+    translate([0, 0, upper_ring_h/2 - epsilon]) 
+      union() {
+        cube([profile2020_w, profile2020_w,
+              upper_ring_h + 1], center = true);
+
+        rotate([0, 0, 45])
+        translate([(mainHole_r + profile2020_w)/2, 0, 0]) // middle of wall
+          cube([usb_hole_w, usb_hole_l,
+                upper_ring_h + 1], center = true);
+      }
+
+    /*
+    cylinder(r = mainHole_r,
+            h = upper_ring_h + 2*epsilon, $fn = 100);
+    */
+  } // difference
 }
+
+
+// tests:
 
 /*
 // test bearings_center rad and height:
@@ -241,15 +312,25 @@ color("blue")
            fn = 100);
 */
 
-//color("green") lower_ring();
-
-//color("black") all_bearing_rods();
-
-color("red") upper_ring_tst();
-
 /*
 color("black")
   rotate([0, 45, 0])
     translate([0, 0, 20])
       first_bearing_rod();
 */
+
+
+// results:
+
+//color("green") lower_ring();
+
+//color("black") all_bearing_rods();
+
+//color("blue") all_bearings();
+
+// create pulley for this upper plate:
+//echo("making pulley with radious = ", upper_ring_slope_out_r);
+//color("yellow") drawPulley(2*upper_ring_slope_out_r, false);
+
+color("red") upper_ring();
+
