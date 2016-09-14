@@ -2,50 +2,52 @@ include <params.scad>
 include <util.scad>
 use <torusPart.scad>
 
-// shell skeleton:
-difference(){
-   cube([width, depth, height]);
+module shell_skeleton() {
+  difference() {
+    cube([width, depth, height]);
     
-   // remove front  
-   translate([profile_w,-profile_w,-epsilon])
-   cube([width-2*profile_w, depth, height-profile_w+epsilon]);
+    // remove front  
+    translate([profile_w,-profile_w,-epsilon])
+      cube([width-2*profile_w, depth, height-profile_w+epsilon]);
     
-   // remove back  
-   translate([profile_w,profile_w,profile_w])
-   cube([width-2*profile_w, depth, height-2*profile_w]);
+    // remove back  
+    translate([profile_w,profile_w,profile_w])
+      cube([width-2*profile_w, depth, height-2*profile_w]);
     
-   // remove sides 
-   translate([-profile_w,profile_w,profile_w])
-   cube([width+2*profile_w, depth-2*profile_w, height-2*profile_w]);
+    // remove sides 
+    translate([-profile_w,profile_w,profile_w])
+      cube([width+2*profile_w, depth-2*profile_w, height-2*profile_w]);
     
-   // remove top 
-   translate([profile_w,profile_w,0])
-   cube([width-2*profile_w, depth-2*profile_w, height+2*profile_w]);
+    // remove top 
+    translate([profile_w,profile_w,0])
+      cube([width-2*profile_w, depth-2*profile_w, height+2*profile_w]);
+  }
 }
 
 
-// lower ring:
-color("green")
+module lower_ring() {
   translate([width/2, depth/2, height])
     ring(u_main_hole_rad, u_lower_rad, u_lower_h);
+}
 
-// lower ring mount:
-translate([width/2, 0, height - profile_w]) {
-  union() {
-    translate([-u_lower_rad, 0, 0])
-      cube([profile_w, depth, profile_w]);
-
-    translate([u_lower_rad - profile_w, 0, 0])
-      cube([profile_w, depth, profile_w]);
+module lower_ring_mount() {
+  translate([width/2, 0, height - profile_w]) {
+    union() {
+      translate([-u_lower_rad, 0, 0])
+        cube([profile_w, depth, profile_w]);
+  
+      translate([u_lower_rad - profile_w, 0, 0])
+        cube([profile_w, depth, profile_w]);
+    }
   }
 }
 
 upper_ring_elev = height + u_lower_h + rings_z_dist;
 
-// upper ring:
-color("red")
+module upper_ring() {
   translate([width/2, depth/2, upper_ring_elev])
     ring(u_main_hole_rad, u_upper_rad, u_upper_h);
+}
 
 
 module stepper() {
@@ -79,47 +81,6 @@ module axis() {
     cube([profile_w, profile_w, axis_h]);
 }
 
-translate([width/2, depth/2 + axis_y_offset, 0])
- rotate([0,0, 40])
-  translate([-width/2, -depth/2, 0])
-{
-    color("black") axis();
-
-    // main horizontal beam:
-    color("black")
-      translate([width/2 - camera_mount_rad, depth/2 - profile_w/2, axis_bot_elev])
-        cube([2*camera_mount_rad, profile_w,  profile_w]);
-
-    // lower stepper
-    color("red")
-      translate([width/2 - stepper_w - profile_w,
-                 depth/2 + stepper_all_h - profile_w,
-                 axis_bot_elev + profile_w])
-        rotate([90, 0, 0])
-          stepper();
-
-    // lower stepper mount:
-    color("black")
-      translate([width/2 - stepper_w - profile_w,
-                 depth/2  - profile_w/2,
-                 axis_bot_elev])
-        cube([stepper_w, stepper_all_h - profile_w/2,  profile_w]);
-
-    color("black")
-      translate([width/2 - camera_mount_rad, depth/2, min_camera_z])
-        slideColumn(camera_h);
-
-    color("black")
-      translate([width/2 + camera_mount_rad, depth/2, min_camera_z])
-        slideColumn(3*camera_h);
-
-    color("red")
-      translate([width/2 - camera_mount_rad + slider_d,
-                 depth/2 - camera_w/2,
-                 min_camera_z + slider_column_h/2 - camera_h/2])
-        rotate([0, 0, 90])
-          camera();
-}
 
 slider_w = slider_column_w + 2*slider_pole_w;
 slider_d = 3*slider_pole_w;
@@ -144,6 +105,12 @@ module Y_cylinder(cr, clen) {
         cylinder(r = cr, h = clen, $fn = 50);
 }
 
+module X_cylinder(cr, clen) {
+    translate([0, clen/2, 0])
+      rotate([0, 90, 0])
+        cylinder(r = cr, h = clen, $fn = 50);
+}
+
 
 slider_column_h = axis_bot_elev + profile_w - min_camera_z;
 
@@ -160,6 +127,21 @@ module slideColumn(slider_h) {
 
     translate([0, 0, slider_column_h/2 - slider_h/2])
       slider(slider_h);
+  }
+}
+
+module third_pole_and_mount() {
+  union() {
+    holder_l = slider_column_w/2 * sin(60);
+    translate([-holder_l, -profile_w, slider_column_h - profile_w/2])
+      X_cylinder(profile_w/2, holder_l);
+    
+    translate([-holder_l, 0, 0])
+      cylinder(r = slider_pole_w, h = slider_column_h, $fn = 50);
+    
+    // counter-balances:
+    translate([-holder_l, 0, slider_column_h/2 - camera_h])
+      cylinder(r = 2*slider_pole_w, h = 2*camera_h, $fn = 50);
   }
 }
 
@@ -188,9 +170,7 @@ module camera() {
 }
 
 
-
-// hand holder:
-color("green") {
+module hand_holder() {
   translate([width/2, depth/2, hand_support_cutR])
     torus(hand_support_bigR, hand_support_cutR);
 
@@ -207,3 +187,94 @@ color("green") {
     cube([profile_w, depth/2 - hand_lock_bigR, profile_w]);
 }
 
+
+module show_rotating_mount(angle = 40, num_columns = 1)
+{
+  translate([width/2, depth/2 + axis_y_offset, 0])
+  rotate([0, 0, angle])
+  translate([-width/2, -depth/2, 0])
+  {
+    color("black") axis();
+
+    // main horizontal beam:
+    color("black")
+      translate([width/2 - camera_mount_rad, depth/2 - profile_w/2, axis_bot_elev])
+        cube([2*camera_mount_rad, profile_w,  profile_w]);
+
+    // lower stepper mount:
+    if (num_columns > 1) {
+      color("black")
+        translate([width/2 - stepper_w - profile_w,
+                   depth/2  - profile_w/2,
+                   axis_bot_elev])
+          cube([stepper_w, stepper_all_h - profile_w/2,  profile_w]);
+    }
+    
+    // lower stepper
+    color("red") {
+//
+        stepper_x = ((num_columns < 2) ? width/2 - stepper_w - camera_mount_rad : width/2 - stepper_w - profile_w);
+//      } else {
+//        stepper_x = 
+//      }
+      translate([stepper_x,
+                 depth/2 + stepper_all_h - 1.5*profile_w,
+                 axis_bot_elev + profile_w])
+        rotate([90, 0, 0])
+          stepper();
+    }
+    
+    // camera column:
+    color("black") {
+      translate([width/2 - camera_mount_rad, depth/2, min_camera_z]) {
+        slideColumn(camera_h);
+      
+        if (num_columns < 2) {
+          third_pole_and_mount();        
+        }
+      }
+    }
+
+    // balance column or only static weight:
+    color("black") {
+      if (num_columns > 1) {
+          translate([width/2 + camera_mount_rad, depth/2, min_camera_z])
+            slideColumn(3*camera_h);
+      } else {
+        cyl_r = 1.5*profile_w;
+        cyl_l = 3*camera_h;
+        translate([width/2 + camera_mount_rad - cyl_l,
+                   depth/2 - 2*cyl_r, axis_bot_elev + profile_w/2])
+          X_cylinder(cyl_r, cyl_l);
+      }
+    }
+    
+    // camera
+    color("red")
+      translate([width/2 - camera_mount_rad + slider_d,
+                 depth/2 - camera_w/2,
+                 min_camera_z + slider_column_h/2 - camera_h/2])
+        rotate([0, 0, 90])
+          camera();
+  }
+}
+
+
+
+// results:
+
+shell_skeleton();
+
+color("green") hand_holder();
+
+lower_ring_mount();
+
+color("green") lower_ring();
+
+color("red") upper_ring();
+
+// First version:
+//show_rotating_mount(40, num_columns = 2);
+
+// ver2:
+show_rotating_mount(40, num_columns = 1);

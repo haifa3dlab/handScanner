@@ -28,10 +28,10 @@ stepper_axis_rad = 2.5;
 stepper_axis_len = 24+2; // above box
 stepper_all_h = stepper_box_h + stepper_axis_len;
 
-axis_bot_elev = height - 85;
+axis_bot_elev = height - 90;
 axis_top_above_upper_plate = 80;
 
-camera_mount_rad = 300;
+camera_mount_rad = 275;
 min_camera_z = 300;
 
 slider_pole_w = 8;
