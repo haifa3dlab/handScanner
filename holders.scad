@@ -212,6 +212,19 @@ module fasten_plate() {
 }
 
 
+module simple_fasten_plate(nx, ny, height)
+{
+  difference() {
+    cube([(nx + 0.5) * fasten_plate_hole_dist,
+          (ny + 0.5)* fasten_plate_hole_dist, height]);
+
+    translate([fasten_plate_hole_dist/2,
+               fasten_plate_hole_dist/2, -epsilon])
+      fasten_holes_interleave(nx, ny, fasten_plate_hole_dist, M3hole_d/2, height + 2*epsilon);
+  }
+}
+
+
 module stepper_holder() {
   difference() {
     union() {
@@ -281,5 +294,6 @@ module prof2020_holder_to_table() {
 
 //color("red") stepper_holder();
 
-color("white") prof2020_holder_to_table();
+//color("white") prof2020_holder_to_table();
 
+color("black") simple_fasten_plate(8, 8, wall_w);
