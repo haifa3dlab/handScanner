@@ -1,0 +1,37 @@
+For Arduino code:
+===========
+
+Electric components:
+- 2 stepper moters (up to 12V - check)
+- adafruit 2-stepper board (https://www.adafruit.com/product/81)
+- power supply (12V, 3.5A)
+- 2 limit-switches  (0-angle, max-height)
+- 2 press button - "do full scan" and "emergency stop"
+
+Considerations:
+- All angle units are in degrees
+  and all height units are in mm
+- The arduino sketch should have params 
+     to translate degrees and height to stepper steps.
+
+Params:
+- BASE_STEPS_PER_ANGLE_DEGREE
+- BASE_MAX_ANGLE
+- CAMERA_STEPS_PER_MM
+- CAMERA_MAX_DIST
+
+- Initialization:
+1) Base - rotate to negative direction till angle limit switch is ON
+2) Height - move camera up till height limit switch is ON
+
+Global vars:
+- angular_speed
+- vertical_speed
+
+Main functionalities:
+1) turn(angle_diff) - should not surpass min/max limits
+2) verticalMove(height_diff) - should not surpass min/max limits
+3) setAngularSpeed(degrees_per_sec)
+4) setHeightSpeed(mm_per_sec)
+5) doFullScan()
+6) emergencyStop()
