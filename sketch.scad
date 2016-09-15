@@ -30,6 +30,7 @@ color("green")
     ring(u_main_hole_rad, u_lower_rad, u_lower_h);
 
 // lower ring mount:
+
 translate([width/2, 0, height - profile_w]) {
   union() {
     translate([-u_lower_rad, 0, 0])
@@ -80,15 +81,22 @@ module axis() {
 }
 
 translate([width/2, depth/2 + axis_y_offset, 0])
-rotate([0,0, 40]) 
+rotate([0,0, -30]) 
 translate([-width/2, -depth/2, 0]){
-color("black") axis();
+color("black") 
+    axis();
+
+//color("magenta")
+//translate([width/2, depth/2 + axis_y_offset, min_camera_z]) 
+//    rotate([0,0, 0 ]) 
+// hex_cage();
+
 
 // main horizontal beam:
 color("black")
   translate([width/2 - camera_mount_rad, depth/2 - profile_w/2, axis_bot_elev])
     cube([2*camera_mount_rad, profile_w,  profile_w]);
-
+    
 // lower stepper
 color("red")
   translate([width/2 - stepper_w - profile_w,
@@ -207,3 +215,20 @@ color("green") {
     cube([profile_w, depth/2 - hand_lock_bigR, profile_w]);
 }
 
+
+module hex_cage() {
+
+   hex_on_layer();
+   
+    
+    translate([0,0, slider_column_h])
+      hex_on_layer();
+}
+
+module hex_on_layer() {
+    hex_r = camera_mount_rad;
+    difference() {
+    cylinder(r=hex_r, h = 40, $fn=6, center = true);
+        cylinder(r=hex_r-profile_w , h = 41, $fn=6, center = true); 
+    } 
+}

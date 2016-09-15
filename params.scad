@@ -8,7 +8,7 @@ pulley_belt_width = belt_width * 1.2;
 
 
 // General Params for the sketch
-height = 800;
+height = 700;
 width = 600;
 depth = 400;
 
