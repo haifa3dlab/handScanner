@@ -17,16 +17,39 @@ module ring_cut_conus() {
 	cylinder(h = conus_h, r1 = 0, r2 = max_r);
 }
 
+module lower_ring_fasten_plate(l, total_w, h)
+{
+  w = big_washer_d + 2;
+
+  //plates with M4 holes to fasten to prof2020
+  translate([0, -total_w/2, 0])
+    fasten_plate(l, w, h, M4hole_d/2); 
+  
+  translate([0, total_w/2 - w, 0])
+    fasten_plate(l, w, h, M4hole_d/2); 
+
+  ring(total_w/2 - 3*wall_w, total_w/2, h);
+}
+
+
 module lower_ring() {
   difference() {
-    ring(bigger_ring_r, 
-         bigger_ring_r + ring_base_w,
-         lower_ring_h, fn = 100);
+    union() {     
+      ring(bigger_hole_r, 
+           lower_ring_max_r,
+           lower_ring_h, fn = 100);
+
+      translate([0, 0, -fasten_plate_h])
+        lower_ring_fasten_plate(
+          2*lower_ring_max_r + big_washer_d, 
+          2*lower_ring_max_r,
+          fasten_plate_h + epsilon);
+    }
 
     torusForBalls();
 
     translate([0, 0, -wall_w])
-		ring_cut_conus();
+      ring_cut_conus();
   }
 }
 
@@ -82,8 +105,15 @@ module upper_ring() {
 }
 
 
+color("green")
+  lower_ring_fasten_plate(
+            2*lower_ring_max_r + big_washer_d, 
+            2*lower_ring_max_r,
+            fasten_plate_h + epsilon);
+
 //color("green") lower_ring();
 
-color("red") upper_ring();
+//color("red") upper_ring();
 
 //color("black") torusForBalls();
+

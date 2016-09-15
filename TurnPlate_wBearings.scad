@@ -5,17 +5,22 @@ use <TimingBelt.scad>
 // params:
 rings_bearing_angle = 45;
 
-bearing_holder_clip_w = 1.5;
+bearing_holder_clip_w = 0.2; //1.5;
 bearing_touch_tol = 0.2; // tolerance to objects which touch and move with the bearing surface.
 bearing_rotate_tol = 0.8; //  tolerance to objects which the bearing rotates relative to them
 bearing_rod_l = 3*bearing_h + bearing_holder_clip_w;
 bearing_rod_bottom_l = bearing_rod_l - bearing_h/2 - bearing_holder_clip_w;
 bearing_rod_angle = 90 - rings_bearing_angle; // to horisontal rings
+
 // width of the shelf of the bearing_rod
 //   which stops the bearing to slide down it.
 bearing_rod_stop_shelf_w = 1.5;
 bearing_rod_max_r = bearing_in_d/2 + bearing_rod_stop_shelf_w;
 bearing_rod_push_tol = 0.05;
+
+bearing_rod_top_hole_d = M3_d;
+bearing_rod_top_hole_h = 6;
+
 
 // Distance of the center of each bearing
 //   from rings' axis: 
@@ -118,10 +123,16 @@ module first_bearing_rod()
                  h = bearing_rod_l - bearing_holder_clip_w - bearing_h,
                  $fn = 50);
     }
-
+    
+    // cylinder to receive M3 
+    translate([0, 0, bearing_rod_l/2 - bearing_rod_top_hole_h/2 + epsilon])
+      cylinder(r = bearing_rod_top_hole_d/2,
+               h = bearing_rod_top_hole_h,
+               center = true, $fn = 20);
+    
     // cut slot for clips to bend:
-    union() {
-    }
+    //union() {
+    //}
   }
 }
 
@@ -150,22 +161,6 @@ module all_rod_mount_holes() {
   }
 }
 
-
-module fasten_plate(x, y, z, hole_r) {
-  // symmetric around y
-  translate([-x/2, 0, 0])
-    difference() {
-      cube([x, y, z]);
-      
-      // put hole in the middle of each side square:
-      translate([y/2, y/2, -epsilon])
-        cylinder(r = hole_r, h = z+2*epsilon, $fn = 50);
-      
-      // put hole in the middle of each side square:
-      translate([x - y/2, y/2, -epsilon])
-        cylinder(r = hole_r, h = z+2*epsilon, $fn = 50);
-    }
-}
 
 module lower_ring() {
   rod_holder_top_r =  lower_ring_out_r -
@@ -204,7 +199,7 @@ module lower_ring() {
     }
     
     // central hole:
-    translate([0, 0, -epsilon]);
+    translate([0, 0, -epsilon])
       cylinder(r = lower_ring_in_r,
                h = bearings_center_z, $fn = 100);
     
@@ -312,12 +307,12 @@ color("blue")
            fn = 100);
 */
 
-/*
+
 color("black")
   rotate([0, 45, 0])
     translate([0, 0, 20])
       first_bearing_rod();
-*/
+
 
 
 // results:
@@ -332,5 +327,5 @@ color("black")
 //echo("making pulley with radious = ", upper_ring_slope_out_r);
 //color("yellow") drawPulley(2*upper_ring_slope_out_r, false);
 
-color("red") upper_ring();
+//color("red") upper_ring();
 

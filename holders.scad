@@ -273,11 +273,11 @@ module prof2020_holder_to_table() {
   }
 }
 
-module linear_bearing_holder_tst(tol)
+module linear_bearing_holder(ring_h)
 {
-  in_r = linear_bearing_out_d/2 + tol;
-  out_r = in_r + linear_bearing_holder_wall_w;
-  ring_h = 10;
+  in_r = linear_bearing_out_d/2 + linear_bearing_holder_tol;
+  out_r = linear_bearing_holder_out_r;
+
   difference() {
     ring(in_r, out_r, ring_h);
 
@@ -288,11 +288,110 @@ module linear_bearing_holder_tst(tol)
   }
 }
 
+module camera_cart()
+{
+  cart_h = 2*linear_bearing_h + wall_w;
+  
+  translate([camera_rod_centers_dist/2, 0, 0])
+    linear_bearing_holder(cart_h);
+
+  translate([-camera_rod_centers_dist/2, 0, 0])
+    rotate([0, 0, 180])
+      linear_bearing_holder(cart_h);
+  
+  // floor between bearings on right side
+  translate([camera_rod_centers_dist/2 - linear_bearing_out_d/2, -2*wall_w, cart_h/2 - wall_w/2])
+    cube([wall_w/2, 4*wall_w, wall_w]);
+  
+  horis_beam_w = 2*wall_w;
+  difference() {
+    union() {
+      // squate horisontal holder beams
+      translate([-camera_rod_centers_dist/2, - linear_bearing_holder_out_r, 0])
+        cube([camera_rod_centers_dist, horis_beam_w, horis_beam_w]);
+      translate([-camera_rod_centers_dist/2, -linear_bearing_holder_out_r,
+                 cart_h - horis_beam_w])
+        cube([camera_rod_centers_dist, horis_beam_w, horis_beam_w]);
+      
+      // circular beam for belt:
+      translate([0, 0, cart_h/2])
+        X_cylinder(horis_beam_w/2, camera_rod_centers_dist);
+    }
+
+    // linear_bearing_holder holes:
+    translate([camera_rod_centers_dist/2, 0, -epsilon])
+      cylinder(r = linear_bearing_out_d/2,
+               h = cart_h + 2*epsilon, $fn = 50);
+    translate([-camera_rod_centers_dist/2, 0, -epsilon])
+      cylinder(r = linear_bearing_out_d/2,
+               h = cart_h + 2*epsilon, $fn = 50);
+  }
+}
+
+module counter_weight_cart()
+{
+  cart_h = linear_bearing_h;
+  turn_axis_w = wall_w;
+  side_blocks_w = 2*wall_w + turn_axis_w;
+  side_blocks_l = 2*linear_bearing_holder_out_r + 4*wall_w;
+
+  echo("side_blocks_l = ", side_blocks_l);
+
+  rotate([0, 0, 90])
+    linear_bearing_holder(cart_h);
+
+  difference() {
+    translate([-side_blocks_l/2,
+              -side_blocks_w/2, cart_h/2 - side_blocks_w/2])
+      cube([side_blocks_l, side_blocks_w, side_blocks_w]);
+
+    cylinder(r = linear_bearing_out_d/2, h = cart_h, $fn = 50);
+    
+    translate([0, 0, cart_h/2])
+      X_cylinder(turn_axis_w/2 + 2*pole_turn_tol,
+                   side_blocks_l + 2*epsilon);
+  }
+
+  belt_holder_l = side_blocks_l + 2*(slider_tol + turn_axis_w);
+  
+  belt_holder_w = 
+    sqrt(pow(cart_h/2, 2)
+          + pow(linear_bearing_holder_out_r,2))
+    + 2*turn_axis_w;
+  
+  translate([0, 0, cart_h/2]) {
+    difference() {
+      X_cylinder(turn_axis_w/2, belt_holder_l);
+
+      cube([side_blocks_l - side_blocks_w, side_blocks_w, side_blocks_w], center = true);
+    }
+    
+    translate([0, -belt_holder_w/2, 0]) {
+      translate([-belt_holder_l/2 + turn_axis_w/2, 0, 0])
+        Y_cylinder(turn_axis_w/2, belt_holder_w);
+      translate([+belt_holder_l/2 - turn_axis_w/2, 0, 0])
+        Y_cylinder(turn_axis_w/2, belt_holder_w);
+    }
+
+    translate([0, -belt_holder_w, 0]) {
+      X_cylinder(turn_axis_w/2, belt_holder_l);
+
+      translate([-pulley_belt_width - wall_w/2, 0, 0])
+        X_cylinder(1.5*turn_axis_w, wall_w);
+      translate([+pulley_belt_width + wall_w/2, 0, 0])
+        X_cylinder(1.5*turn_axis_w, wall_w);
+    }
+  }
+}
+
 // testing:
 
 //color("black") rod_holder_ring();
 
 //fasten_holes_interleave(10, 10, fasten_plate_hole_dist, M3hole_d/2, fasten_plate_h + 2*epsilon);
+
+//color("black") linear_bearing_holder(linear_bearing_h+wall_w);
+
 
 
 // results:
@@ -314,5 +413,6 @@ module linear_bearing_holder_tst(tol)
 
 //color("green") linear_bearing_holder_tst(linear_bearing_holder_tol);
 
-color("black") linear_bearing_holder_tst(0);
+color("black") camera_cart();
 
+//color("black") counter_weight_cart();

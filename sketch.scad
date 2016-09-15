@@ -99,18 +99,6 @@ module slider(slider_h) {
   }
 }
 
-module Y_cylinder(cr, clen) {
-    translate([0, clen/2, 0])
-      rotate([90, 0, 0])
-        cylinder(r = cr, h = clen, $fn = 50);
-}
-
-module X_cylinder(cr, clen) {
-    translate([0, clen/2, 0])
-      rotate([0, 90, 0])
-        cylinder(r = cr, h = clen, $fn = 50);
-}
-
 
 slider_column_h = axis_bot_elev + profile_w - min_camera_z;
 
@@ -133,7 +121,7 @@ module slideColumn(slider_h) {
 module third_pole_and_mount() {
   union() {
     holder_l = slider_column_w/2 * sin(60);
-    translate([-holder_l, -profile_w, slider_column_h - profile_w/2])
+    translate([-holder_l/2, 0/*-profile_w*/, slider_column_h - profile_w/2])
       X_cylinder(profile_w/2, holder_l);
     
     translate([-holder_l, 0, 0])
@@ -243,8 +231,8 @@ module show_rotating_mount(angle = 40, num_columns = 1)
       } else {
         cyl_r = 1.5*profile_w;
         cyl_l = 3*camera_h;
-        translate([width/2 + camera_mount_rad - cyl_l,
-                   depth/2 - 2*cyl_r, axis_bot_elev + profile_w/2])
+        translate([width/2 + camera_mount_rad - cyl_l/2,
+                   depth/2, axis_bot_elev + profile_w/2])
           X_cylinder(cyl_r, cyl_l);
       }
     }

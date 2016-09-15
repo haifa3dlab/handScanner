@@ -1,7 +1,7 @@
 
 // Params for GT3 TimingBelt and accesories:
 // belt
-belt_width = 5;
+belt_width = 6;
 
 // pulley
 pulley_belt_width = belt_width * 1.2;
@@ -68,13 +68,16 @@ ring_contact_angle = 30;
 
 // diff between the radiuses
 //   of uper and lower rings:
-ring_diff_r = 2*glassBall_r * sin(ring_contact_angle);
+ring_diff_r = 2*glassBall_r * sin(ring_contact_angle); // ?? - can be 0 
 
 // the height of the slot between the rings:
 ring_diff_h = glassBall_r/2;
 
-bigger_ring_r = mainHole_r + ring_diff_r;
+bigger_hole_r = mainHole_r + ring_diff_r;
 lower_ring_h = ring_base_w;
+lower_ring_max_r = bigger_hole_r + ring_base_w;
+
+fasten_plate_h = 1.5*wall_w;
 
 // maximum radious of all rings in this model:
 max_r = mainHole_r + ring_base_w + 30;
@@ -94,11 +97,18 @@ big_washer_d = 19;
 
 
 // Params for mounted camera slider:
+
+// tolerance for a hole which should turn around
+//   some plastic pole
+pole_turn_tol = 0.15; // on each side
+
 profile2020_w = 20;
 profile2020_tol = 0; // tolerance on each side (0 is OK)
 
-M3hole_d = 3.3;
-M4hole_d = 4.3;
+M3_d = 2;
+M3hole_d = M3_d + 0.3;
+M4_d = 4;
+M4hole_d = M4_d + 3;
 hole_wall_dist = 4;
 
 prof2020_fasten_plate_l = hole_wall_dist + wall_w + M4hole_d;
@@ -118,6 +128,8 @@ rod_holder_fasten_block_w = 3*wall_w;
 rod_holder_h = 4*wall_w;
 rod_holder_fasten_h = 4*wall_w; // only the back fastener
 
+camera_rod_centers_dist = 45;
+
 holder_bend_len = 4;
 holder_bend_close_gap = 3 + 2*rod_holder_tol;
 
@@ -125,7 +137,13 @@ stepper_holder_l = 4*wall_w;
 
 linear_bearing_in_d = 8;
 linear_bearing_out_d = 15;
+linear_bearing_h = 24;
 linear_bearing_holder_wall_w = 3;
 linear_bearing_holder_gap_w = 1;
 linear_bearing_holder_tol = 0; //-0.05;
+
+linear_bearing_holder_out_r =
+    linear_bearing_out_d/2
+    + linear_bearing_holder_tol
+    + linear_bearing_holder_wall_w;
 
