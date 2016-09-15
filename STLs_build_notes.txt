@@ -1,0 +1,33 @@
+// include files:
+params.scad - all parametric params to change sizes and tollerances (except for TurnPlate_wBearings)
+util.scad - several usefull reuseable basic modules
+torusPart.scad - just to generate full-circle or arc of torus 
+
+// models from external sources:
+TimingBelt.scad - models of GT3 time-belts and their pulleys (has commented-out params for GT2 - never checked)
+M4_NutHolder_2020Tslot.scad - change nut_num_x and nut_num_y to generate many nut-holders to fasten M4-nuts to 2020-profile T-slots
+
+// my main code:
+TurnPlate.scad - with glass-balls
+TurnPlate_wBearings.scad - with 4 bearings  (all its params are at the beginning of the file)
+
+make_pulley.scad - very short - only to generate central pulley ("pulley.stl") for TurnPlate.scad (see command inside)
+// note: the pulley for TurnPlate_wBearings ("pulley_r35.3.stl") is generates from inside TurnPlate_wBearings.scad
+
+holders.scad - various small addapters and connectors for 2020-T-slot profile, 8mm rods, lower stepper,
+                             linear_beraing, fasten_plates (to fasten 8mm rod holders and more), camera_cart, counter_weight_cart
+
+sketch.scad - general mechanic sketch of the project, contains at least two versions (First version and ver2)
+
+
+To build the STLs you need:
+1. to find it in its specific scad file
+2. uncomment the line which generates it (comment out other generated objects)
+3. press F6 and after rendering "Export as STL"
+
+The only dependency between STLs is that TurnPlate and TurnPlate_wBearings
+  depend on pulley.stl and pulley_r35.3.stl respectively.
+  
+ 
+
+
