@@ -1,3 +1,8 @@
+#ifndef ScannerCtrl_h
+#define ScannerCtrl_h
+
+#include "AFMotor.h"
+
 // Base motor parameters
 #define BASE_CHANNEL 1
 #define BASE_MAX_ANGLE 300
@@ -10,33 +15,42 @@
 #define CAMERA_DEGREE_PER_STEP 1.8 // steps per revolution = 360 / 1.8
 
 // End-Stop - limit switches PINs
-#define CAMERA_LINIT_SWITCH_PIN 10
+#define CAMERA_LIMIT_SWITCH_PIN 10
 #define BASE_LIMIT_SWITCH_PIN 11
 
-#include "AFMotor.h"
+enum errType {
+  err_ok = 0,
+  err_exceeds_limits = 1,
+};
 
 class Scanner{
 public:
   Scanner();
   void init();
   
-  uint8_t baseTurn(uint32_t turn_degree);
+  errType baseTurn(int turn_degree);
   void setAngularSpeed(uint32_t degrees_per_sec);
   
-  uint8_t cameraClimb(uint32_t distance_mm);
+  errType cameraMove(int distance_mm);
   void setHeightSpeed(uint32_t mm_per_sec);
 
   uint8_t doFullScan();
   void emergencyStop();
 
+  void releaseMotors();
 
+  uint32_t getBaseAngle();
+  uint32_t getCameraPosition();
   
 private:
   uint8_t safeMove(AF_Stepper &motor, uint32_t &current_position, uint32_t distance, uint32_t limit);
-  void reset_motor(AF_Stepper &motor);
+  void ResetBaseMotor();
+  void ResetCameraMotor();
   AF_Stepper CameraMotor, BaseMotor;
 
   uint32_t baseAngle;
   uint32_t mCameraPosition;
+  uint32_t steps;
 };
 
+#endif

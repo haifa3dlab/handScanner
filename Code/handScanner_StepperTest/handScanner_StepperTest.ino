@@ -3,7 +3,6 @@
 // this code is public domain, enjoy!
 
 #include <AFMotor.h>
-#include "ScannerCtrl.h"
 // Connect a stepper motor with 48 steps per revolution (7.5 degree)
 // to motor port #2 (M3 and M4)
 AF_Stepper motor(200, 2);
