@@ -18,10 +18,16 @@
 #define CAMERA_LIMIT_SWITCH_PIN 10
 #define BASE_LIMIT_SWITCH_PIN 11
 
+// Interrupts for emergency stop
+#define interruptPin 2
+
+
 enum errType {
   err_ok = 0,
   err_exceeds_limits = 1,
 };
+
+
 
 class Scanner{
 public:
@@ -35,7 +41,7 @@ public:
   void setHeightSpeed(uint32_t mm_per_sec);
 
   uint8_t doFullScan();
-  void emergencyStop();
+  static void emergencyStop();
 
   void releaseMotors();
 

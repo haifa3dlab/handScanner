@@ -304,8 +304,20 @@ uint32_t Scanner::getCameraPosition(){
   return mCameraPosition;
   
 }
-/*
-  
 
-  emergencyStop();
-*/
+
+ /**
+ * Description: ISR - Interrupt Seervice Routine   
+ *              method is "attahched" to certain interrupts pin (2 or 3 for UNO) and called with "button" to halt
+ *              all execution
+ *              
+ * @Author Hagai Solodar (21/9/2016)
+ * 
+ * @param: ISR do not have params 
+ * @return: and do not returns any values
+ */
+void Scanner::emergencyStop(){
+;  
+
+}
+
