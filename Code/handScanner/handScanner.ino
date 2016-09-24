@@ -1,6 +1,10 @@
 #include "ScannerCtrl.h"
+#include "Parser.h"
+
+
 
 Scanner scanner;
+Parser parser;
 int cmdDelay = 3000;
 int init_flag = 1;
 
@@ -9,13 +13,23 @@ void setup() {
   Serial.begin(9600);           // set up Serial library at 9600 bps
   Serial.println("Stepper test!");  
 
-
+  /*
   // press button to half everything, usually it is recommanded to add power down emergency button
-  // just remember that on power down the camera motor is disabled and the camera will "fall" 
+  //just remember that on power down the camera motor is disabled and the camera will "fall" 
   attachInterrupt(digitalPinToInterrupt(interruptPin), Scanner::emergencyStop, CHANGE);
+  */
 }
 
+void loop(){
+  uint32_t value = NO_VALUE; //NO_VALUE defined in Parser.h
+  //Serial.println("New Loop: ");
+  if ( parser.Listen())
+    value = parser.callCommand(scanner);
 
+  if ( value != NO_VALUE ) { Serial.print("Value Recevied: "); Serial.print(value);}
+  delay(cmdDelay);
+}
+/*
 void loop() {
   
   if (init_flag){
@@ -69,3 +83,4 @@ void loop() {
   delay(cmdDelay*3);
 
 }
+*/

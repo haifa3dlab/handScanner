@@ -21,6 +21,7 @@
 // Interrupts for emergency stop
 #define interruptPin 2
 
+const bool DEBUG_SCANNER = false;
 
 enum errType {
   err_ok = 0,

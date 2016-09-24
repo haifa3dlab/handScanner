@@ -69,7 +69,7 @@ void Scanner::ResetCameraMotor(){
     //  2. test if endstop pressed:
     //  3. if pressed break else continue
     // will be replaced with PIN read
-    Serial.println("Scanner::ResetCameraMotor");
+    if ( DEBUG_SCANNER ) Serial.println("Scanner::ResetCameraMotor");
     int WatchDog = 200;
     while ( 1 ){//HIGH == digitalRead(CAMERA_LIMIT_SWITCH_PIN )){
         CameraMotor.step(1, FORWARD);
@@ -95,7 +95,7 @@ void Scanner::ResetBaseMotor(){
     //  2. test if endstop pressed:
     //  3. if pressed break else continue
     // will be replaced with PIN read
-    Serial.println("Scanner::ResetBaseMotor");
+     if ( DEBUG_SCANNER ) Serial.println("Scanner::ResetBaseMotor");
     int WatchDog = 200;
     while ( 1 ){// HIGH == digitalRead(BASE_LIMIT_SWITCH_PIN )){
         BaseMotor.step(1, FORWARD);
@@ -118,20 +118,20 @@ errType Scanner::baseTurn(int turn_degree){
   // returns value for error log
   // 0 - ok
   // 1 - exceeds limits
-  Serial.println("Scanner::baseTurn");
+   if ( DEBUG_SCANNER ) Serial.println("Scanner::baseTurn");
   if (turn_degree + baseAngle >= BASE_MAX_ANGLE || turn_degree + baseAngle <= 0 ) return err_exceeds_limits;
   if ( turn_degree >= 0 ){
     steps = turn_degree  / BASE_DEGREE_PER_STEP ;
-    Serial.print("Steps Forward: "); Serial.println(steps, DEC);
+     if ( DEBUG_SCANNER ) {Serial.print("Steps Forward: "); Serial.println(steps, DEC);}
     BaseMotor.step(steps, FORWARD, SINGLE);
   }
   else {
     steps = - ( turn_degree / BASE_DEGREE_PER_STEP ) ;
-    Serial.print("Steps Backwarrd: "); Serial.println(steps, DEC);
+     if ( DEBUG_SCANNER ) { Serial.print("Steps Backwarrd: "); Serial.println(steps, DEC);}
     BaseMotor.step(steps, BACKWARD, SINGLE);
   }
   baseAngle += turn_degree;
-  Serial.print("Base Angle: "); Serial.println(baseAngle, DEC);
+   if ( DEBUG_SCANNER ) { Serial.print("Base Angle: "); Serial.println(baseAngle, DEC);}
   return err_ok;
 }
 
@@ -148,8 +148,7 @@ errType Scanner::baseTurn(int turn_degree){
  */
 void Scanner::setAngularSpeed(uint32_t degrees_per_sec){
     // no input check or error handling
-    Serial.println("Scanner::setAngularSpeed");
-    Serial.print("Angular Speed in degress per second: ");Serial.println(degrees_per_sec, DEC);
+     if ( DEBUG_SCANNER ) {Serial.println("Scanner::setAngularSpeed");Serial.print("Angular Speed in degress per second: ");Serial.println(degrees_per_sec, DEC);}
     BaseMotor.setSpeed( degrees_per_sec / 6 ); //  1 round/minute = 6 deg/sec
 }
 
@@ -168,20 +167,20 @@ errType Scanner::cameraMove(int distance_mm){
   // returns value for error log
   // 0 - ok
   // 1 - exceeds limits
-  Serial.println("Scanner::cameraMove");
+   if ( DEBUG_SCANNER ) Serial.println("Scanner::cameraMove");
   if (distance_mm + mCameraPosition >= CAMERA_MAX_DIST || distance_mm + mCameraPosition <= 0 ) return err_exceeds_limits;
   if ( distance_mm >= 0 ){
     uint32_t steps = distance_mm  / CAMERA_DEGREE_PER_STEP ;
-    Serial.print("Steps Forward: "); Serial.println(steps, DEC);
+     if ( DEBUG_SCANNER ) {Serial.print("Steps Forward: "); Serial.println(steps, DEC);}
     CameraMotor.step(steps, FORWARD, SINGLE);
   }
   else {
     uint32_t steps = -distance_mm / CAMERA_DEGREE_PER_STEP ;
-    Serial.print("Steps Backward: "); Serial.println(steps, DEC);
+     if ( DEBUG_SCANNER ) {Serial.print("Steps Backward: "); Serial.println(steps, DEC);}
     CameraMotor.step(steps, BACKWARD, SINGLE);
   }
   mCameraPosition += distance_mm;
-  Serial.print("Camera Position: "); Serial.println(mCameraPosition, DEC);
+  if ( DEBUG_SCANNER ) {Serial.print("Camera Position: "); Serial.println(mCameraPosition, DEC);}
   return err_ok;
 }
 
@@ -200,8 +199,8 @@ void Scanner::setHeightSpeed(uint32_t mm_per_sec){
     // no input check or error handling
     // 1 mm / sec = ( STEP_PER_MM )  steps / sec = (STEP_PER_MM * DEGREE_PER_STEP ) degree / sec = 
     // = ( STEP_PER_MM * DEGREE_PER_STEP * 60 ) degree / minute = STEP_PER_MM * DEGREE_PER_STEP / 6 rpm 
-    Serial.println("Scanner::setHeightSpeed");
-    Serial.print("Camera Travel Speed in mm per second: "); Serial.println(mm_per_sec, DEC);
+    if ( DEBUG_SCANNER ) Serial.println("Scanner::setHeightSpeed");
+    if ( DEBUG_SCANNER ) { Serial.print("Camera Travel Speed in mm per second: "); Serial.println(mm_per_sec, DEC);}
     CameraMotor.setSpeed( mm_per_sec * ( ( CAMERA_STEPS_PER_MM * CAMERA_DEGREE_PER_STEP )/ 6) ); 
 }
 
@@ -225,6 +224,7 @@ void Scanner::setHeightSpeed(uint32_t mm_per_sec){
  * 
  */
 uint8_t Scanner::doFullScan(){
+    if ( DEBUG_SCANNER )Serial.println("Scanner::doFullScan");
     const uint8_t STEP_HEIGHT_MM = 30;
     for (uint8_t curr_step = 0 ; curr_step < ( CAMERA_MAX_DIST / STEP_HEIGHT_MM ); curr_step++){
       if ( baseTurn(BASE_MAX_ANGLE) == 1 ) return 1; //error return value
@@ -246,7 +246,7 @@ uint8_t Scanner::doFullScan(){
  * 
  */
   void Scanner::releaseMotors(){
-    Serial.println("Scanner::releaseMotors");
+    if ( DEBUG_SCANNER )Serial.println("Scanner::releaseMotors");
     CameraMotor.release();
     BaseMotor.release();
   }
@@ -302,7 +302,6 @@ uint32_t Scanner::getBaseAngle(){
  */
 uint32_t Scanner::getCameraPosition(){
   return mCameraPosition;
-  
 }
 
 
