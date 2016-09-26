@@ -261,6 +261,7 @@ uint8_t Scanner::doFullScan()
       if ( cameraMove(nextCameraPos) != 0)
         return err_fullscan_camera_move; //error return value
     }
+    releaseMotors(); // don't heat the steppers if not needed.
     return err_ok;
 }
 
