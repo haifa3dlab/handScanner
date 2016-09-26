@@ -13,7 +13,7 @@ const float BASE_STEP_PER_DEGREE = 7.47;
 // Camera motor parameters
 #define CAMERA_CHANNEL 2
 #define CAMERA_MAX_DIST 350
-const float CAMERA_STEPS_PER_MM = 10;
+const float CAMERA_STEPS_PER_MM = 8;
 
 // End-Stop - limit switches PINs
 #define CAMERA_LIMIT_SWITCH_PIN 9
