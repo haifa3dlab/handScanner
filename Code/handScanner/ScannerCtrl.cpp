@@ -114,19 +114,20 @@ void Scanner::ResetBaseMotor(){
  * 
  * Constants: BASE_MAX_ANGLE, BASE_DEGREE_PER_STEP
  */
-errType Scanner::baseTurn(int turn_degree){
+errType Scanner::baseTurn(int toDegree){
   // returns value for error log
   // 0 - ok
   // 1 - exceeds limits
   if ( DEBUG_SCANNER ) Serial.println("Scanner::baseTurn");
-  if ( turn_degree + baseAngle > BASE_MAX_ANGLE || turn_degree + baseAngle < 0 ) 
+  if ( toDegree > BASE_MAX_ANGLE || toDegree < 0 )
   { 
     if ( DEBUG_SCANNER ) Serial.println("err_exceeds_limits"); 
     return err_exceeds_limits;
   }
+  int turn_degree = toDegree - baseAngle;
   if ( turn_degree >= 0 ){
     steps = turn_degree  / BASE_DEGREE_PER_STEP ;
-     if ( DEBUG_SCANNER ) {Serial.print("Steps Forward: "); Serial.println(steps, DEC);}
+    if ( DEBUG_SCANNER ) {Serial.print("Steps Forward: "); Serial.println(steps, DEC);}
     BaseMotor.step(steps, FORWARD, SINGLE);
   }
   else {
@@ -174,16 +175,17 @@ void Scanner::setAngularSpeed(uint32_t degrees_per_sec){
  * 
  * Constants: CAMERA_MAX_DIST, CAMERA_DEGREE_PER_STEP
  */
-errType Scanner::cameraMove(int distance_mm){
+errType Scanner::cameraMove(int toPos){
   // returns value for error log
   // 0 - ok
   // 1 - exceeds limits
   if ( DEBUG_SCANNER ) Serial.println("Scanner::cameraMove");
-  if (distance_mm + mCameraPosition > CAMERA_MAX_DIST || distance_mm + mCameraPosition < 0 ) 
+  if ( toPos > CAMERA_MAX_DIST || toPos < 0 )
   { 
-    if ( DEBUG_SCANNER ) Serial.println("err_exceeds_limits"); 
+    if ( DEBUG_SCANNER ) Serial.println("ERROR: err_exceeds_limits");
     return err_exceeds_limits;
   }
+  int distance_mm = toPos - mCameraPosition;
   if ( distance_mm >= 0 ){
     uint32_t steps = distance_mm  / CAMERA_DEGREE_PER_STEP ;
      if ( DEBUG_SCANNER ) {Serial.print("Steps Forward: "); Serial.println(steps, DEC);}
@@ -241,16 +243,25 @@ void Scanner::setHeightSpeed(uint32_t mm_per_sec){
  * @return: error type
  * 
  */
-uint8_t Scanner::doFullScan(){
+uint8_t Scanner::doFullScan()
+{
     if ( DEBUG_SCANNER )Serial.println("Scanner::doFullScan");
-    const uint8_t STEP_HEIGHT_MM = 30;
-    for (uint8_t curr_step = 0 ; curr_step < ( CAMERA_MAX_DIST / STEP_HEIGHT_MM ); curr_step++){
-      if ( baseTurn(BASE_MAX_ANGLE) != 0) return 1; //error return value
-      if ( cameraMove(CAMERA_MAX_DIST) != 0) return 2; //error return value
-      if ( baseTurn(0) != 0) return 3; // error return value
-      if ( cameraMove(0) != 0) return 4; // error return value
+
+    int nextCameraPos = 0;
+     // move to start
+    cameraMove(nextCameraPos);
+    baseTurn(0);
+
+    for ( nextCameraPos += STEP_HEIGHT_MM;
+          nextCameraPos <= CAMERA_MAX_DIST;
+          nextCameraPos += STEP_HEIGHT_MM)
+    {
+      if ( baseTurn( (baseAngle < BASE_MAX_ANGLE/2) ? BASE_MAX_ANGLE : 0) != 0) 
+        return err_fullscan_base_turn; //error return value
+      if ( cameraMove(nextCameraPos) != 0)
+        return err_fullscan_camera_move; //error return value
     }
-    return 0;
+    return err_ok;
 }
 
 
@@ -263,40 +274,11 @@ uint8_t Scanner::doFullScan(){
  * @return: 
  * 
  */
-  void Scanner::releaseMotors(){
-    if ( DEBUG_SCANNER )Serial.println("Scanner::releaseMotors");
-    CameraMotor.release();
-    BaseMotor.release();
-  }
-
-  
-/**
- * Description: safe move (Function NOT IN USE!!!)
- * 
- * @Author: Hagai Solodar (19/09/2016)
- * 
- * @param: motor
- * @param: current_position
- * @param: ditance
- * @param: limit
- * @return: error type
- * 
- */
-uint8_t Scanner::safeMove(AF_Stepper &motor, uint32_t &current_position, uint32_t distance, uint32_t limit){
-  // returns value for error log
-  // 0 - ok
-  // 1 - exceeds limits
-  if (distance + current_position >= limit || distance + current_position <= 0 ) return 1;
-  if ( distance >= 0 ){
-    uint32_t steps = distance  / BASE_DEGREE_PER_STEP ;
-    CameraMotor.step(steps, FORWARD, SINGLE);
-  }
-  else {
-    uint32_t steps = -distance / BASE_DEGREE_PER_STEP ;
-    CameraMotor.step(steps, BACKWARD, SINGLE);
-  }
-  mCameraPosition += distance;
-  return 0;  
+void Scanner::releaseMotors()
+{
+  if ( DEBUG_SCANNER )Serial.println("Scanner::releaseMotors");
+  CameraMotor.release();
+  BaseMotor.release();
 }
 
 /**
@@ -333,8 +315,10 @@ uint32_t Scanner::getCameraPosition(){
  * @param: ISR do not have params 
  * @return: and do not returns any values
  */
-void Scanner::emergencyStop(){
-;  
-
+void Scanner::emergencyStop()
+{
+  releaseMotors();
+  // Note: Maybe we need totally disconnect
+  //   the Adafruit board from electric power.
 }
 

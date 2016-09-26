@@ -5,7 +5,7 @@
 
 Scanner scanner;
 Parser parser;
-int cmdDelay = 100;
+int cmdDelay = 20;
 int init_flag = 1;
 
 
@@ -26,7 +26,10 @@ void loop(){
   if ( parser.Listen())
     value = parser.callCommand(scanner);
 
-  if ( value != NO_VALUE ) { Serial.print("Value Recevied: "); Serial.print(value);}
+  if ( value != NO_VALUE ) {
+    Serial.print("Value Recevied: ");
+    Serial.print(value);
+  }
   delay(cmdDelay);
 }
 /*

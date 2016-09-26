@@ -13,6 +13,7 @@
 #define CAMERA_STEPS_PER_MM 12.50 
 #define CAMERA_MAX_DIST 350
 #define CAMERA_DEGREE_PER_STEP 1.8 // steps per revolution = 360 / 1.8
+#define STEP_HEIGHT_MM 30
 
 // End-Stop - limit switches PINs
 #define CAMERA_LIMIT_SWITCH_PIN 10
@@ -26,23 +27,26 @@ const bool DEBUG_SCANNER = true; //false;
 enum errType {
   err_ok = 0,
   err_exceeds_limits = 1,
+  err_fullscan_base_turn,
+  err_fullscan_camera_move
 };
 
 
 
-class Scanner{
+class Scanner
+{
 public:
   Scanner();
   void init();
   
-  errType baseTurn(int turn_degree);
+  errType baseTurn(int toDegree);
   void setAngularSpeed(uint32_t degrees_per_sec);
   
-  errType cameraMove(int distance_mm);
+  errType cameraMove(int toPos);
   void setHeightSpeed(uint32_t mm_per_sec);
 
   uint8_t doFullScan();
-  static void emergencyStop();
+  void emergencyStop();
 
   void releaseMotors();
 
@@ -50,7 +54,7 @@ public:
   uint32_t getCameraPosition();
   
 private:
-  uint8_t safeMove(AF_Stepper &motor, uint32_t &current_position, uint32_t distance, uint32_t limit);
+  uint8_t safeMove(AF_Stepper &motor, uint32_t &current_position, uint32_t toPos, uint32_t limit);
   void ResetBaseMotor();
   void ResetCameraMotor();
   AF_Stepper CameraMotor, BaseMotor;
