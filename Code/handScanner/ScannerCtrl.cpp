@@ -242,16 +242,16 @@ uint8_t Scanner::doFullScan()
 {
     if ( DEBUG_SCANNER )Serial.println("Scanner::doFullScan");
 
-    int nextCameraPos = 0;
+    int nextCameraPos = fullScanMinDist;
      // move to start
     cameraMove(nextCameraPos);
     baseTurn(0);
 
     for ( nextCameraPos += SCAN_BAND_HEIGHT_MM;
-          nextCameraPos <= CAMERA_MAX_DIST;
+          nextCameraPos <= fullScanMaxDist;
           nextCameraPos += SCAN_BAND_HEIGHT_MM)
     {
-      if ( baseTurn( (baseAngle < BASE_MAX_ANGLE/2) ? BASE_MAX_ANGLE : 0) != 0) 
+      if ( baseTurn( (baseAngle < (fullScanMaxDeg + fullScanMinDeg)/2) ? fullScanMaxDeg : fullScanMinDeg) != 0) 
         return err_fullscan_base_turn; //error return value
       if ( cameraMove(nextCameraPos) != 0)
         return err_fullscan_camera_move; //error return value

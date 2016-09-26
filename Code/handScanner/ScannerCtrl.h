@@ -25,6 +25,10 @@ const float CAMERA_STEPS_PER_MM = 8;
 
 // full scan bands:
 #define SCAN_BAND_HEIGHT_MM 50
+const int fullScanMinDeg = 0;
+const int fullScanMaxDeg = BASE_MAX_ANGLE;
+const int fullScanMinDist = 0;
+const int fullScanMaxDist = CAMERA_MAX_DIST;
 
 // Interrupts for emergency stop
 #define interruptPin 2
