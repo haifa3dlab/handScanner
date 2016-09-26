@@ -5,7 +5,7 @@
 
 Scanner scanner;
 Parser parser;
-int cmdDelay = 3000;
+int cmdDelay = 100;
 int init_flag = 1;
 
 

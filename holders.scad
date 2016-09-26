@@ -384,6 +384,12 @@ module counter_weight_cart()
   }
 }
 
+module bearing_axis()
+{
+  X_cylinder(bearing_axis_d/2, bearing_axis_l);
+}
+
+
 // testing:
 
 //color("black") rod_holder_ring();
@@ -403,7 +409,7 @@ module counter_weight_cart()
 // generate separately file "fasten_holes_8x10.stl":
 //fasten_holes_interleave(8, 10, fasten_plate_hole_dist, M3hole_d/2, fasten_plate_h + 2*epsilon);
 
-color("black") fasten_plate();
+//color("black") fasten_plate();
 
 //color("red") stepper_holder();
 
@@ -416,3 +422,5 @@ color("black") fasten_plate();
 //color("black") camera_cart();
 
 //color("black") counter_weight_cart();
+
+color("white") bearing_axis();

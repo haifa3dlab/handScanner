@@ -30,10 +30,11 @@ class Parser{
   uint32_t callCommand(Scanner &scanner);
 
   private:
+  void debugParserCmd(String cmdName);
+
   String readStringInput();
   String mCommand;
   String mParam;
-  
 };
 
 

@@ -11,7 +11,7 @@
 // Camera motor parameters
 #define CAMERA_CHANNEL 2
 #define CAMERA_STEPS_PER_MM 12.50 
-#define CAMERA_MAX_DIST 150
+#define CAMERA_MAX_DIST 350
 #define CAMERA_DEGREE_PER_STEP 1.8 // steps per revolution = 360 / 1.8
 
 // End-Stop - limit switches PINs
@@ -21,7 +21,7 @@
 // Interrupts for emergency stop
 #define interruptPin 2
 
-const bool DEBUG_SCANNER = false;
+const bool DEBUG_SCANNER = true; //false;
 
 enum errType {
   err_ok = 0,
