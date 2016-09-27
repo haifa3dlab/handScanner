@@ -6,12 +6,12 @@
 #include "AFMotor.h"
 
 // Base motor parameters
-#define BASE_CHANNEL 1
+#define BASE_CHANNEL 2
 #define BASE_MAX_ANGLE 300
 const float BASE_STEP_PER_DEGREE = 7.47;
 
 // Camera motor parameters
-#define CAMERA_CHANNEL 2
+#define CAMERA_CHANNEL 1
 #define CAMERA_MAX_DIST 350
 const float CAMERA_STEPS_PER_MM = 8;
 
@@ -39,7 +39,9 @@ enum errType {
   err_ok = 0,
   err_exceeds_limits = 1,
   err_fullscan_base_turn,
-  err_fullscan_camera_move
+  err_fullscan_camera_move,
+  err_bad_cmd,
+  err_bad_param
 };
 
 

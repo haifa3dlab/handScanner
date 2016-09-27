@@ -27,24 +27,38 @@ bool Parser::Listen(int timeOut){
   int incomingByte = 555;
   mCommand = "NULL";
   mParam = "NULL";
+  int timeOutCnt = timeOut;
   while (incomingByte != '#'){
     if (Serial.available() > 0) {
-                incomingByte = Serial.read();
+      incomingByte = Serial.read();
     }
-    if (timeOut -- == 0 ){
-      //Serial.println("TimeOut Occur!");
+    if (timeOutCnt-- <= 0 ){
+      //if ( DEBUG_PARSER ) { Serial.println("TimeOut Occured (in cmd read)"); }
       return false;
     }
   }
   mCommand = readStringInput();
   mCommand.trim();
-  if (Serial.available() > 0){ mParam = readStringInput(); mParam.trim();}
+
+  timeOutCnt = timeOut;
+  while (Serial.available() < 0)
+  {
+    if (timeOutCnt-- <= 0 ){
+      if ( DEBUG_PARSER ) { Serial.println("*TimeOut Occur (in param read)*"); }
+      return false;
+    }
+  }
+  mParam = readStringInput();
+  mParam.trim();
+
   // debug
-  Serial.print("\nCommand Received: ") ; 
-  Serial.print(mCommand); 
-  Serial.print("\nParameter Received: ") ; 
-  Serial.print(mParam);
-  Serial.print("\n");
+  if ( DEBUG_PARSER ) {
+    Serial.print("\nCommand Received: ");
+    Serial.print(mCommand);
+    Serial.print("\nParameter Received: ");
+    Serial.print(mParam);
+    Serial.print("\n");
+  }
   return true;
 }
 
@@ -71,6 +85,11 @@ void Parser::debugParserCmd(String cmdName)
  * example commands: "#SAS 100# #SHS 50# #DFS 1#"
  */
 uint32_t Parser::callCommand(Scanner &scanner){
+    if ( mParam.length() <= 0 || mParam.equals("NULL") ) {
+      Serial.println("*NULL param*");
+      return err_bad_param;
+    }
+
     if ( mCommand == "BT"/*"baseTurn"*/){
         debugParserCmd("baseTurn");  
         scanner.baseTurn(mParam.toInt());
@@ -112,7 +131,7 @@ uint32_t Parser::callCommand(Scanner &scanner){
         Serial.print("\"");
         Serial.print(mCommand);
         Serial.println("\"");
-        return NO_VALUE;
+        return err_bad_cmd;
     }
     return NO_VALUE;
      

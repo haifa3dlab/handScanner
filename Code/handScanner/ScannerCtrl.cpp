@@ -20,7 +20,7 @@
  * @param: 
  * @return:
  * 
- * Constants: CAMERA_CHANNEL, BASE_CHANNEL, CAMERA_LIMIT_SWITCH_PIN), BaseStop(BASE_LIMIT_SWITCH_PIN
+ * Constants: CAMERA_CHANNEL, BASE_CHANNEL, CAMERA_LIMIT_SWITCH_PIN, BASE_LIMIT_SWITCH_PIN
  */
 Scanner::Scanner() : CameraMotor(200, CAMERA_CHANNEL), BaseMotor(200, BASE_CHANNEL), CameraStop(CAMERA_LIMIT_SWITCH_PIN), BaseStop(BASE_LIMIT_SWITCH_PIN)
 {
@@ -72,6 +72,7 @@ void Scanner::ResetCameraMotor(){
         CameraMotor.step(1, BACKWARD, MICROSTEP);
         if ( WatchDog-- <= 0 ) break;
     }
+    mCameraPosition = 0;
     return;
 }
 
@@ -98,6 +99,7 @@ void Scanner::ResetBaseMotor(){
         BaseMotor.step(1, BACKWARD, MICROSTEP);
         if ( WatchDog-- <= 0 ) break;
     }
+    baseAngle = 0;
     return;
 }
 
@@ -179,7 +181,7 @@ errType Scanner::cameraMove(int toPos){
   if ( DEBUG_SCANNER ) Serial.println("Scanner::cameraMove");
   if ( toPos > CAMERA_MAX_DIST || toPos < 0 )
   { 
-    if ( DEBUG_SCANNER ) Serial.println("ERROR: err_exceeds_limits");
+    if ( DEBUG_SCANNER ) Serial.println("*ERROR: err_exceeds_limits*");
     return err_exceeds_limits;
   }
   int distance_mm = toPos - mCameraPosition;
