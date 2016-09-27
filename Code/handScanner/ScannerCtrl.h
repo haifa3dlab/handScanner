@@ -1,23 +1,34 @@
 #ifndef ScannerCtrl_h
 #define ScannerCtrl_h
 
+#include "StopSensor.h"
+
 #include "AFMotor.h"
 
 // Base motor parameters
-#define BASE_CHANNEL 1
+#define BASE_CHANNEL 2
 #define BASE_MAX_ANGLE 300
-#define BASE_DEGREE_PER_STEP 1.8 
+const float BASE_STEP_PER_DEGREE = 7.47;
 
 // Camera motor parameters
-#define CAMERA_CHANNEL 2
-#define CAMERA_STEPS_PER_MM 12.50 
+#define CAMERA_CHANNEL 1
 #define CAMERA_MAX_DIST 350
-#define CAMERA_DEGREE_PER_STEP 1.8 // steps per revolution = 360 / 1.8
-#define STEP_HEIGHT_MM 30
+const float CAMERA_STEPS_PER_MM = 8;
 
 // End-Stop - limit switches PINs
-#define CAMERA_LIMIT_SWITCH_PIN 10
-#define BASE_LIMIT_SWITCH_PIN 11
+#define CAMERA_LIMIT_SWITCH_PIN 9
+#define BASE_LIMIT_SWITCH_PIN 10
+
+// max possible steps - for case of StopSensor failure
+#define ANGLE_MAX_STEPS 0 //1000, 0 - for now without StopSensors
+#define HEIGHT_MAX_STEPS 0 //1000, 0 - for now without StopSensors
+
+// full scan bands:
+#define SCAN_BAND_HEIGHT_MM 50
+const int fullScanMinDeg = 0;
+const int fullScanMaxDeg = BASE_MAX_ANGLE;
+const int fullScanMinDist = 0;
+const int fullScanMaxDist = CAMERA_MAX_DIST;
 
 // Interrupts for emergency stop
 #define interruptPin 2
@@ -28,7 +39,9 @@ enum errType {
   err_ok = 0,
   err_exceeds_limits = 1,
   err_fullscan_base_turn,
-  err_fullscan_camera_move
+  err_fullscan_camera_move,
+  err_bad_cmd,
+  err_bad_param
 };
 
 
@@ -58,6 +71,7 @@ private:
   void ResetBaseMotor();
   void ResetCameraMotor();
   AF_Stepper CameraMotor, BaseMotor;
+  StopSensor CameraStop, BaseStop;
 
   uint32_t baseAngle;
   uint32_t mCameraPosition;
