@@ -94,6 +94,10 @@ uint32_t Parser::callCommand(Scanner &scanner){
         debugParserCmd("baseTurn");  
         scanner.baseTurn(mParam.toInt());
     }
+    if ( mCommand == "BTR"/*"baseTurnRel"*/){
+        debugParserCmd("baseTurnRel");  
+        scanner.baseTurnRel(mParam.toInt());
+    }
     else if ( mCommand == "SAS"/*"setAngularSpeed"*/){
         debugParserCmd("setAngularSpeed");
         scanner.setAngularSpeed(mParam.toInt());
@@ -101,6 +105,10 @@ uint32_t Parser::callCommand(Scanner &scanner){
     else if ( mCommand == "CM"/*"cameraMove"*/){
        debugParserCmd("cameraMove ");
        scanner.cameraMove(mParam.toInt());
+    }
+    else if ( mCommand == "CMR"/*"cameraMoveRel"*/){
+       debugParserCmd("cameraMoveRel");
+       scanner.cameraMoveRel(mParam.toInt());
     }
     else if ( mCommand == "SHS"/*"setHeightSpeed"*/){
         debugParserCmd("setHeightSpeed");

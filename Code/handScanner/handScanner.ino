@@ -11,11 +11,10 @@ int init_flag = 1;
 
 void setup() {
   Serial.begin(9600);           // set up Serial library at 9600 bps
-  Serial.println("Stepper test!");  
+  Serial.println("Hand Scanner Start!");
 
   /*
-  // press button to half everything, usually it is recommanded to add power down emergency button
-  //just remember that on power down the camera motor is disabled and the camera will "fall" 
+  // press button to halt everything
   attachInterrupt(digitalPinToInterrupt(interruptPin), Scanner::emergencyStop, CHANGE);
   */
 }
@@ -32,9 +31,11 @@ void loop(){
   }
   delay(cmdDelay);
 }
+
+
 /*
-void loop() {
-  
+void basicTest()
+{
   if (init_flag){
     Serial.println("Reseting Motor First");
     scanner.init();
@@ -84,6 +85,5 @@ void loop() {
     Serial.println("Error - exceeds motor limits!");
   }
   delay(cmdDelay*3);
-
 }
 */

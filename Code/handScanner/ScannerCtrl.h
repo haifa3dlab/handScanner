@@ -8,12 +8,12 @@
 // Base motor parameters
 #define BASE_CHANNEL 2
 #define BASE_MAX_ANGLE 300
-const float BASE_STEP_PER_DEGREE = 7.47;
+const float BASE_STEP_PER_DEGREE = 7.47F;
 
 // Camera motor parameters
 #define CAMERA_CHANNEL 1
-#define CAMERA_MAX_DIST 350
-const float CAMERA_STEPS_PER_MM = 8;
+#define CAMERA_MAX_DIST 212
+const float CAMERA_STEPS_PER_MM = 8.0F;
 
 // End-Stop - limit switches PINs
 #define CAMERA_LIMIT_SWITCH_PIN 9
@@ -22,6 +22,16 @@ const float CAMERA_STEPS_PER_MM = 8;
 // max possible steps - for case of StopSensor failure
 #define ANGLE_MAX_STEPS 0 //1000, 0 - for now without StopSensors
 #define HEIGHT_MAX_STEPS 0 //1000, 0 - for now without StopSensors
+
+// (de)acceleration params:
+#define CAMERA_MOUNT_RAD 275     // mm - copy from params.scad !
+
+#define STEPS_PER_ACCEL_ROUND 4
+// Max base mount tips acceleration in g - earth gravity acceleration
+const float maxAccelG = 0.01F;
+const float gEarth = 9806.65F;    // mm/(sec^2)
+const float maxAccelDeg = (maxAccelG * gEarth) * 180.0F / (PI * CAMERA_MOUNT_RAD);  // deg/(sec^2)
+const float maxAccelBaseSteps = maxAccelDeg * BASE_STEP_PER_DEGREE;
 
 // full scan bands:
 #define SCAN_BAND_HEIGHT_MM 50
@@ -53,29 +63,33 @@ public:
   void init();
   
   errType baseTurn(int toDegree);
-  void setAngularSpeed(uint32_t degrees_per_sec);
+  errType baseTurnRel(int diffDegree);
+  void setAngularSpeed(int degrees_per_sec);
   
   errType cameraMove(int toPos);
-  void setHeightSpeed(uint32_t mm_per_sec);
+  errType cameraMoveRel(int diff_mm);
+  void setHeightSpeed(int mm_per_sec);
 
-  uint8_t doFullScan();
+  errType doFullScan();
   void emergencyStop();
 
   void releaseMotors();
 
-  uint32_t getBaseAngle();
-  uint32_t getCameraPosition();
+  int getBaseAngle();
+  int getCameraPosition();
   
-private:
-  uint8_t safeMove(AF_Stepper &motor, uint32_t &current_position, uint32_t toPos, uint32_t limit);
+protected:
+  int slowStartStop(AF_Stepper& motor, int fullSpeed, float accel, bool forward = true, bool speedUp = true);
   void ResetBaseMotor();
   void ResetCameraMotor();
   AF_Stepper CameraMotor, BaseMotor;
   StopSensor CameraStop, BaseStop;
 
-  uint32_t baseAngle;
-  uint32_t mCameraPosition;
-  uint32_t steps;
+  int mBaseAngle;
+  int mCameraPosition;
+
+  int angularSpeed; // steps/sec
+  int heightSpeed; // steps/sec
 };
 
 #endif
