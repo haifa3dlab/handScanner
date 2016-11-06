@@ -27,67 +27,119 @@ bool Parser::Listen(int timeOut){
   int incomingByte = 555;
   mCommand = "NULL";
   mParam = "NULL";
+  int timeOutCnt = timeOut;
   while (incomingByte != '#'){
     if (Serial.available() > 0) {
-                incomingByte = Serial.read();
+      incomingByte = Serial.read();
     }
-    if (timeOut -- == 0 ){
-      //Serial.println("TimeOut Occur!");
+    if (timeOutCnt-- <= 0 ){
+      //if ( DEBUG_PARSER ) { Serial.println("TimeOut Occured (in cmd read)"); }
       return false;
     }
   }
-  mCommand = readStringInput(); mCommand.trim();
-  if (Serial.available() > 0){ mParam = readStringInput(); mParam.trim();}
+  mCommand = readStringInput();
+  mCommand.trim();
+
+  timeOutCnt = timeOut;
+  while (Serial.available() < 0)
+  {
+    if (timeOutCnt-- <= 0 ){
+      if ( DEBUG_PARSER ) { Serial.println("*TimeOut Occur (in param read)*"); }
+      return false;
+    }
+  }
+  mParam = readStringInput();
+  mParam.trim();
+
   // debug
-  Serial.print("\nCommand Received: ") ; Serial.print(mCommand); Serial.print("\nParameter Received: ") ; Serial.print(mParam); Serial.print("\n");
+  if ( DEBUG_PARSER ) {
+    Serial.print("\nCommand Received: ");
+    Serial.print(mCommand);
+    Serial.print("\nParameter Received: ");
+    Serial.print(mParam);
+    Serial.print("\n");
+  }
   return true;
 }
 
+void Parser::debugParserCmd(String cmdName)
+{
+  if ( !(DEBUG_PARSER) ) return;
+  
+  Serial.print(cmdName);
+  Serial.print(" (");
+  Serial.print(mCommand);
+  Serial.print(") ");
+  Serial.print(mParam);
+  Serial.print(" (int: ");
+  Serial.print(mParam.toInt(), DEC);
+  Serial.print(")");
+  Serial.print("\n");
+}
 
 /* Description: calls the scanner command
  * 
  * @param: uses the mCommand and mParam member variable
  * @return: return uint32_t for methods "getBaseAngle" and "getCameraPosition"
+ * 
+ * example commands: "#SAS 100# #SHS 50# #DFS 1#"
  */
 uint32_t Parser::callCommand(Scanner &scanner){
-    if ( mCommand == "baseTurn"){
-        if ( DEBUG_PARSER ){Serial.print("baseTurn ");Serial.print(mParam);Serial.print("\n");}
+    if ( mParam.length() <= 0 || mParam.equals("NULL") ) {
+      Serial.println("*NULL param*");
+      return err_bad_param;
+    }
+
+    if ( mCommand == "BT"/*"baseTurn"*/){
+        debugParserCmd("baseTurn");  
         scanner.baseTurn(mParam.toInt());
     }
-    else if ( mCommand == "setAngularSpeed"){
-      if ( DEBUG_PARSER ) {Serial.print("setAngularSpeed ");Serial.print(mParam);Serial.print("\n");}
+    if ( mCommand == "BTR"/*"baseTurnRel"*/){
+        debugParserCmd("baseTurnRel");  
+        scanner.baseTurnRel(mParam.toInt());
+    }
+    else if ( mCommand == "SAS"/*"setAngularSpeed"*/){
+        debugParserCmd("setAngularSpeed");
         scanner.setAngularSpeed(mParam.toInt());
     }
-    else if ( mCommand == "cameraMove"){
-       if ( DEBUG_PARSER ) {Serial.print("cameraMove ");Serial.print(mParam);Serial.print("\n");}
+    else if ( mCommand == "CM"/*"cameraMove"*/){
+       debugParserCmd("cameraMove ");
        scanner.cameraMove(mParam.toInt());
     }
-    else if ( mCommand == "setHeightSpeed"){
-        if ( DEBUG_PARSER ) {}
+    else if ( mCommand == "CMR"/*"cameraMoveRel"*/){
+       debugParserCmd("cameraMoveRel");
+       scanner.cameraMoveRel(mParam.toInt());
+    }
+    else if ( mCommand == "SHS"/*"setHeightSpeed"*/){
+        debugParserCmd("setHeightSpeed");
         scanner.setHeightSpeed(mParam.toInt());
     }
-    else if ( mCommand == "doFullScan"){
-       if ( DEBUG_PARSER ) {Serial.print("doFullScan\n");}
-        scanner.doFullScan();
+    else if ( mCommand == "DFS"/*"doFullScan"*/){
+       debugParserCmd("doFullScan");
+       scanner.doFullScan();
     }
-    else if ( mCommand == "releaseMotors"){
-      if ( DEBUG_PARSER ) {Serial.print("releaseMotors\n");}
+    else if ( mCommand == "RM"/*"releaseMotors"*/){
+      debugParserCmd("releaseMotors");
       scanner.releaseMotors();
     }
-    else if ( mCommand == "getBaseAngle"){
-        if ( DEBUG_PARSER ) {Serial.print("getBaseAngle\n");}
+    else if ( mCommand == "GBA"/*"getBaseAngle"*/){
+        debugParserCmd("getBaseAngle");
         return scanner.getBaseAngle();
     }
-    else if ( mCommand == "getCameraPosition"){
-        if ( DEBUG_PARSER ) {Serial.print("getCameraPosition\n");}
+    else if ( mCommand == "GCP"/*"getCameraPosition"*/){
+        debugParserCmd("getCameraPosition");
         return scanner.getCameraPosition();
     }
-    else if ( mCommand == "init"){
+    else if ( mCommand == "INI"/*"init"*/){
+         debugParserCmd("init");
         scanner.init();     
     }
     else {
-        Serial.print("No Such Command!\n");
-        return NO_VALUE;
+        Serial.print("No Such Command:");
+        Serial.print("\"");
+        Serial.print(mCommand);
+        Serial.println("\"");
+        return err_bad_cmd;
     }
     return NO_VALUE;
      

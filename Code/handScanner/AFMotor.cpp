@@ -82,6 +82,7 @@ static AFMotorController MC;
 /******************************************
                MOTORS
 ******************************************/
+
 inline void initPWM1(uint8_t freq) {
 #if defined(__AVR_ATmega8__) || \
     defined(__AVR_ATmega48__) || \
@@ -280,8 +281,6 @@ inline void setPWM3(uint8_t s) {
 #endif
 }
 
-
-
 inline void initPWM4(uint8_t freq) {
 #if defined(__AVR_ATmega8__) || \
     defined(__AVR_ATmega48__) || \
@@ -334,6 +333,7 @@ inline void setPWM4(uint8_t s) {
    #error "This chip is not supported!"
 #endif
 }
+
 
 AF_DCMotor::AF_DCMotor(uint8_t num, uint8_t freq) {
   motornum = num;

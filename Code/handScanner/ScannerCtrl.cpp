@@ -1,6 +1,5 @@
 // Hand Scaneer library
 
-
 #if (ARDUINO >= 100)
   #include "Arduino.h"
 #else
@@ -21,15 +20,13 @@
  * @param: 
  * @return:
  * 
- * Constants: CAMERA_DEGREE_PER_STEP, CAMERA_CHANNEL, BASE_DEGREE_PER_STEP, BASE_CHANNEL
+ * Constants: CAMERA_CHANNEL, BASE_CHANNEL, CAMERA_LIMIT_SWITCH_PIN, BASE_LIMIT_SWITCH_PIN
  */
-//Scanner::Scanner():CameraMotor(360 / CAMERA_DEGREE_PER_STEP, CAMERA_CHANNEL),BaseMotor(360 / BASE_DEGREE_PER_STEP, BASE_CHANNEL){
-Scanner::Scanner():CameraMotor(200, 1),BaseMotor(200, 2){
+Scanner::Scanner() : CameraMotor(200, CAMERA_CHANNEL), BaseMotor(200, BASE_CHANNEL), CameraStop(CAMERA_LIMIT_SWITCH_PIN), BaseStop(BASE_LIMIT_SWITCH_PIN)
+{
     Serial.println("Enter Scanner C'tor");
     mCameraPosition = 0;
-    baseAngle = 0;
-  //pinMode(CAMERA_LIMIT_SWITCH_PIN, INPUT);
-  //pinMode(BASE_LIMIT_SWITCH_PIN, INPUT);
+    mBaseAngle = 0;
 }
 
 
@@ -45,8 +42,8 @@ Scanner::Scanner():CameraMotor(200, 1),BaseMotor(200, 2){
  */
 void Scanner::init(){
     Serial.println("Enters Scanner::init()");
-    CameraMotor.setSpeed(10);
-    BaseMotor.setSpeed(10);
+    BaseMotor.setSpeed(20);
+    CameraMotor.setSpeed(40);
     ResetCameraMotor();
     ResetBaseMotor();
 }
@@ -55,7 +52,7 @@ void Scanner::init(){
 /**
  * Description: Reset Camera motor position, function get called at initialization, motor moves back to limit-switched (end-stops)
  * 
- * @Author Hagai Solodar (19/9/2016)
+ * @Author Hagai Solodar (19/9/2016), Benny Godlin (27/9/2016)
  * 
  * @param: 
  * @return: 
@@ -70,11 +67,12 @@ void Scanner::ResetCameraMotor(){
     //  3. if pressed break else continue
     // will be replaced with PIN read
     if ( DEBUG_SCANNER ) Serial.println("Scanner::ResetCameraMotor");
-    int WatchDog = 200;
-    while ( 1 ){//HIGH == digitalRead(CAMERA_LIMIT_SWITCH_PIN )){
-        CameraMotor.step(1, FORWARD);
-        if ( WatchDog-- == 0 ) break;
+    int WatchDog = HEIGHT_MAX_STEPS;
+    while ( !CameraStop.getState() ){
+        CameraMotor.step(1, BACKWARD, MICROSTEP);
+        if ( WatchDog-- <= 0 ) break;
     }
+    mCameraPosition = 0;
     return;
 }
 
@@ -83,7 +81,7 @@ void Scanner::ResetCameraMotor(){
  * Description: Reset Base motor's position, function get called at initialization, motor moves back to limit-switched (end-stops)
  *              each step the SW check if the input from END_STOP pin is high (polling)
  * 
- * @Author Hagai Solodar (19/9/2016)
+ * @Author Hagai Solodar (19/9/2016), Benny Godlin (27/9/2016)
  * 
  * @param:
  * @return: 
@@ -96,114 +94,254 @@ void Scanner::ResetBaseMotor(){
     //  3. if pressed break else continue
     // will be replaced with PIN read
      if ( DEBUG_SCANNER ) Serial.println("Scanner::ResetBaseMotor");
-    int WatchDog = 200;
-    while ( 1 ){// HIGH == digitalRead(BASE_LIMIT_SWITCH_PIN )){
-        BaseMotor.step(1, FORWARD);
-        if ( WatchDog-- == 0 ) break;
+    int WatchDog = ANGLE_MAX_STEPS;
+    while ( !BaseStop.getState() ){
+        BaseMotor.step(1, BACKWARD, MICROSTEP);
+        if ( WatchDog-- <= 0 ) break;
     }
+    mBaseAngle = 0;
     return;
 }
 
 /**
  * Description: turn the base, control the Base's motor, include protection from illegal moves
  * 
- * @Author Hagai Solodar (19/9/2016)
+ * @Author Hagai Solodar (19/9/2016), Benny Godlin (27/9/2016)
  * 
  * @param: turn_degree (angle to move in unit degrees)
  * @return: error type
  * 
- * Constants: BASE_MAX_ANGLE, BASE_DEGREE_PER_STEP
+ * Constants: BASE_MAX_ANGLE, BASE_STEP_PER_DEGREE
  */
-errType Scanner::baseTurn(int turn_degree){
+errType Scanner::baseTurn(int toDegree){
   // returns value for error log
   // 0 - ok
   // 1 - exceeds limits
-   if ( DEBUG_SCANNER ) Serial.println("Scanner::baseTurn");
-  if (turn_degree + baseAngle >= BASE_MAX_ANGLE || turn_degree + baseAngle <= 0 ) return err_exceeds_limits;
-  if ( turn_degree >= 0 ){
-    steps = turn_degree  / BASE_DEGREE_PER_STEP ;
-     if ( DEBUG_SCANNER ) {Serial.print("Steps Forward: "); Serial.println(steps, DEC);}
-    BaseMotor.step(steps, FORWARD, SINGLE);
+  if ( DEBUG_SCANNER ) Serial.println("Scanner::baseTurn");
+  if ( toDegree > BASE_MAX_ANGLE || toDegree < 0 )
+  { 
+    if ( DEBUG_SCANNER ) Serial.println("err_exceeds_limits"); 
+    return err_exceeds_limits;
   }
-  else {
-    steps = - ( turn_degree / BASE_DEGREE_PER_STEP ) ;
-     if ( DEBUG_SCANNER ) { Serial.print("Steps Backwarrd: "); Serial.println(steps, DEC);}
-    BaseMotor.step(steps, BACKWARD, SINGLE);
+  int turn_degree = toDegree - mBaseAngle;
+  bool forward = ( turn_degree >= 0 );
+  int steps = round((forward ? turn_degree : -turn_degree) * BASE_STEP_PER_DEGREE);
+  if ( DEBUG_SCANNER ) {
+    Serial.print(forward ? "Steps Forward: " : "Steps Backwarrd: ");
+    Serial.println(steps, DEC);
   }
-  baseAngle += turn_degree;
-   if ( DEBUG_SCANNER ) { Serial.print("Base Angle: "); Serial.println(baseAngle, DEC);}
+
+  int speedUpSteps = slowStartStop(BaseMotor, angularSpeed, maxAccelBaseSteps, forward, /*speedUp=*/true);
+  int fullSpeedSteps = steps - 2*speedUpSteps;
+  if (fullSpeedSteps > 0) {
+    BaseMotor.step(fullSpeedSteps, (forward ? FORWARD : BACKWARD), SINGLE);
+  } else {
+    // BUG: accel and (de)accel may use more then steps needed -
+    //   and the base ends at different position then ordered !!!                <<=== FIX
+    Serial.print("Acceleration and de-acceleration takes to much steps: ");
+    Serial.println(speedUpSteps, DEC);
+    Serial.println("Base position may be wrong !");
+  }
+  int slowDownSteps = slowStartStop(BaseMotor, angularSpeed, maxAccelBaseSteps, forward, /*speedUp=*/false);
+
+  mBaseAngle += turn_degree;
+  if ( DEBUG_SCANNER ) { 
+    Serial.print("Base Angle: "); 
+    Serial.println(mBaseAngle, DEC);
+  }
   return err_ok;
 }
 
 
 /**
+ * Description: turn the base relative to current position uses baseTurn() to execute
+ *
+ * @Author Benny Godlin (27/10/2016)
+ *
+ * @param: diffDegree (how many degrees to turn relative to current position)
+ * @return: error type
+ * 
+ * Constants:
+ */
+errType Scanner::baseTurnRel(int diffDegree){
+  int newAngle = mBaseAngle + diffDegree;
+  if (newAngle < 0) newAngle = 0;
+  else if (newAngle > BASE_MAX_ANGLE) newAngle = BASE_MAX_ANGLE;
+  return baseTurn(newAngle);
+}
+
+/**
  * Description: set Base motor speed in units of degree per sec
  * 
- * @Author Hagai Solodar (19/9/2016)
+ * @Author Hagai Solodar (19/9/2016), Benny Godlin (27/9/2016)
  * 
  * @param: degrees_per_sec (set the base motor angular speed)
  * @return: 
  * 
- * Constants: 
+ * Constants: BASE_STEP_PER_DEGREE
  */
-void Scanner::setAngularSpeed(uint32_t degrees_per_sec){
+void Scanner::setAngularSpeed(int degrees_per_sec){
     // no input check or error handling
-     if ( DEBUG_SCANNER ) {Serial.println("Scanner::setAngularSpeed");Serial.print("Angular Speed in degress per second: ");Serial.println(degrees_per_sec, DEC);}
-    BaseMotor.setSpeed( degrees_per_sec / 6 ); //  1 round/minute = 6 deg/sec
+    if ( DEBUG_SCANNER ) {
+      Serial.println("Scanner::setAngularSpeed");
+      Serial.print("Angular Speed in degress per second: ");
+      Serial.println(degrees_per_sec, DEC);
+    }
+    angularSpeed = round(degrees_per_sec * BASE_STEP_PER_DEGREE);
+    BaseMotor.setSpeed( angularSpeed );
 }
 
 
 /**
  * Description: move the camera, control the Camera's motor
  * 
- * @Author Hagai Solodar (19/9/2016)
+ * @Author Hagai Solodar (19/9/2016), Benny Godlin (27/9/2016)
  * 
  * @param: distance_mm (distance in mm, negative values to go up)
  * @return: error type
  * 
- * Constants: CAMERA_MAX_DIST, CAMERA_DEGREE_PER_STEP
+ * Constants: CAMERA_MAX_DIST, CAMERA_STEPS_PER_MM
  */
-errType Scanner::cameraMove(int distance_mm){
+errType Scanner::cameraMove(int toPos){
   // returns value for error log
   // 0 - ok
   // 1 - exceeds limits
-   if ( DEBUG_SCANNER ) Serial.println("Scanner::cameraMove");
-  if (distance_mm + mCameraPosition >= CAMERA_MAX_DIST || distance_mm + mCameraPosition <= 0 ) return err_exceeds_limits;
+  if ( DEBUG_SCANNER ) Serial.println("Scanner::cameraMove");
+  if ( toPos > CAMERA_MAX_DIST || toPos < 0 )
+  { 
+    if ( DEBUG_SCANNER ) Serial.println("*ERROR: err_exceeds_limits*");
+    return err_exceeds_limits;
+  }
+  int distance_mm = toPos - mCameraPosition;
   if ( distance_mm >= 0 ){
-    uint32_t steps = distance_mm  / CAMERA_DEGREE_PER_STEP ;
-     if ( DEBUG_SCANNER ) {Serial.print("Steps Forward: "); Serial.println(steps, DEC);}
+    int steps = round(distance_mm * CAMERA_STEPS_PER_MM);
+    if ( DEBUG_SCANNER ) {Serial.print("Steps Forward: "); Serial.println(steps, DEC);}
     CameraMotor.step(steps, FORWARD, SINGLE);
   }
   else {
-    uint32_t steps = -distance_mm / CAMERA_DEGREE_PER_STEP ;
-     if ( DEBUG_SCANNER ) {Serial.print("Steps Backward: "); Serial.println(steps, DEC);}
+    int steps = -round(distance_mm * CAMERA_STEPS_PER_MM);
+    if ( DEBUG_SCANNER ) {Serial.print("Steps Backward: "); Serial.println(steps, DEC);}
     CameraMotor.step(steps, BACKWARD, SINGLE);
   }
   mCameraPosition += distance_mm;
-  if ( DEBUG_SCANNER ) {Serial.print("Camera Position: "); Serial.println(mCameraPosition, DEC);}
+  if ( DEBUG_SCANNER ) {
+    Serial.print("Camera Position: ");
+    Serial.println(mCameraPosition, DEC);
+  }
   return err_ok;
 }
 
 
 /**
+ * Description: move the camera relative to current position, uses cameraMove() to execute
+ *
+ * @Author Benny Godlin (27/10/2016)
+ *
+ * @param: diff_mm (how many mm to move relative to current position)
+ * @return: error type
+ *
+ * Constants:
+ */
+errType Scanner::cameraMoveRel(int diff_mm){
+  int newPos = mCameraPosition + diff_mm;
+  if (newPos < 0) newPos = 0;
+  else if (newPos > CAMERA_MAX_DIST) newPos = CAMERA_MAX_DIST;
+  return cameraMove(newPos);
+}
+
+/**
  * Description: set Camera motor speed in units of mm per sec
  * 
- * @Author Hagai Solodar (19/9/2016)
+ * @Author Hagai Solodar (19/9/2016), Benny Godlin (27/9/2016)
  * 
  * @param: mm_per_sec
  * @return: 
  * 
- * Constants: CAMERA_STEPS_PER_MM, CAMERA_DEGREE_PER_STEP
+ * Constants: CAMERA_STEPS_PER_MM
  */
-void Scanner::setHeightSpeed(uint32_t mm_per_sec){
+void Scanner::setHeightSpeed(int mm_per_sec){
     // no input check or error handling
-    // 1 mm / sec = ( STEP_PER_MM )  steps / sec = (STEP_PER_MM * DEGREE_PER_STEP ) degree / sec = 
-    // = ( STEP_PER_MM * DEGREE_PER_STEP * 60 ) degree / minute = STEP_PER_MM * DEGREE_PER_STEP / 6 rpm 
     if ( DEBUG_SCANNER ) Serial.println("Scanner::setHeightSpeed");
     if ( DEBUG_SCANNER ) { Serial.print("Camera Travel Speed in mm per second: "); Serial.println(mm_per_sec, DEC);}
-    CameraMotor.setSpeed( mm_per_sec * ( ( CAMERA_STEPS_PER_MM * CAMERA_DEGREE_PER_STEP )/ 6) ); 
+    heightSpeed = round(mm_per_sec * CAMERA_STEPS_PER_MM);
+    CameraMotor.setSpeed( heightSpeed );
 }
 
+
+#define MAXLONG (2147483647L)
+
+static long diffMicros(long endMicros, long startMicros)
+{
+  long diff = endMicros - startMicros;
+  if (diff < 0) diff += MAXLONG;
+  return diff;
+}
+
+/**
+ * Description: speed-up or slow-down to certain speed (steps/sec)
+ *              at certain acceleration (steps/(sec^2))
+ *
+ * @Author Benny Godlin (25/10/2016)
+ *
+ * @param: motor (the motor to spped-up or slow down)
+ *         fullSpeed (the full speed to which accelerate or deccelerate in  steps/sec)
+ *         accel (max acceleration in steps/(sec^2), to bound force applied to mechanics)
+ *         speedUp (if true we speedup to fullSpeed, otherwise we slow-down from fullSpeed to stop)
+ *         forward (if true the motor should step forward, otherwise step backword)
+ *
+ * @return: number of steps performed during (de)acceleration
+ *
+ * Constants: STEPS_PER_ACCEL_ROUND
+ */
+int Scanner::slowStartStop(AF_Stepper& motor, int fullSpeed, float accel, bool forward/*=true*/, bool speedUp/*=true*/)
+{
+  long startMicros, currMicros, prevMicros, diff, lastStepMicros;
+  int startSpeed, trgSpeed, currSpeed, diffSpeed;
+  int stepCnt = 0;
+
+  if (speedUp) {
+    startSpeed = STEPS_PER_ACCEL_ROUND / 0.2; // first faze - very slow for 200ms
+    trgSpeed = fullSpeed;
+  } else {
+    startSpeed = fullSpeed;
+    trgSpeed = 0;
+  }
+
+  for (currSpeed = startSpeed, startMicros = micros();
+       (speedUp ? currSpeed <= trgSpeed : currSpeed > trgSpeed);
+       /*in body*/)
+  {
+    motor.setSpeed( currSpeed );
+    motor.step(STEPS_PER_ACCEL_ROUND, (forward ? FORWARD : BACKWARD), SINGLE);
+    prevMicros = currMicros;
+    currMicros = micros();
+    diff = diffMicros(currMicros, prevMicros);
+    stepCnt += STEPS_PER_ACCEL_ROUND;
+
+    // Compensate for the last step time -
+    //   motor.step() returns immediatelly after
+    //   the motor reaches the position after STEPS_PER_ACCEL_ROUND
+    //   but we should wait the step time according to current speed.
+    lastStepMicros = (diff / (STEPS_PER_ACCEL_ROUND - 1));
+    delayMicroseconds(lastStepMicros);
+
+    // calc new currSpeed
+    diff = diffMicros(currMicros, startMicros);
+    diffSpeed = round((diff + lastStepMicros) * accel / 1000000.0F);
+
+    if (speedUp) {
+      currSpeed = diffSpeed;
+      if (diffSpeed > fullSpeed)
+        diffSpeed > fullSpeed;
+    } else {
+      currSpeed = fullSpeed - diffSpeed;
+      if (currSpeed < 0)
+        break;
+    }
+  }
+
+  return stepCnt;
+}
 
 
 /**
@@ -217,22 +355,32 @@ void Scanner::setHeightSpeed(uint32_t mm_per_sec){
  * 4. lower camera in STEP_HEIGHT_MM amount
  * 5. back to one until CAMERA_MAX_DIST reached
  * 
- * @Author: Hagai Solodar (19/09/2016)
+ * @Author: Hagai Solodar (19/09/2016), Benny Godlin (27/9/2016)
  * 
  * @param: motor
  * @return: error type
  * 
  */
-uint8_t Scanner::doFullScan(){
+errType Scanner::doFullScan()
+{
     if ( DEBUG_SCANNER )Serial.println("Scanner::doFullScan");
-    const uint8_t STEP_HEIGHT_MM = 30;
-    for (uint8_t curr_step = 0 ; curr_step < ( CAMERA_MAX_DIST / STEP_HEIGHT_MM ); curr_step++){
-      if ( baseTurn(BASE_MAX_ANGLE) == 1 ) return 1; //error return value
-      if ( cameraMove(STEP_HEIGHT_MM) == 1 ) return 2; //error return value
-      if ( baseTurn(-BASE_MAX_ANGLE) == 1) return 3; // error return value
-      if ( cameraMove(STEP_HEIGHT_MM) == 1) return 4; // error return value
+
+    int nextCameraPos = fullScanMinDist;
+     // move to start
+    cameraMove(nextCameraPos);
+    baseTurn(0);
+
+    for ( nextCameraPos += SCAN_BAND_HEIGHT_MM;
+          nextCameraPos <= fullScanMaxDist;
+          nextCameraPos += SCAN_BAND_HEIGHT_MM)
+    {
+      if ( baseTurn( (mBaseAngle < (fullScanMaxDeg + fullScanMinDeg)/2) ? fullScanMaxDeg : fullScanMinDeg) != 0)
+        return err_fullscan_base_turn; //error return value
+      if ( cameraMove(nextCameraPos) != 0)
+        return err_fullscan_camera_move; //error return value
     }
-    return 0;
+    releaseMotors(); // don't heat the steppers if not needed.
+    return err_ok;
 }
 
 
@@ -245,40 +393,11 @@ uint8_t Scanner::doFullScan(){
  * @return: 
  * 
  */
-  void Scanner::releaseMotors(){
-    if ( DEBUG_SCANNER )Serial.println("Scanner::releaseMotors");
-    CameraMotor.release();
-    BaseMotor.release();
-  }
-
-  
-/**
- * Description: safe move (Function NOT IN USE!!!)
- * 
- * @Author: Hagai Solodar (19/09/2016)
- * 
- * @param: motor
- * @param: current_position
- * @param: ditance
- * @param: limit
- * @return: error type
- * 
- */
-uint8_t Scanner::safeMove(AF_Stepper &motor, uint32_t &current_position, uint32_t distance, uint32_t limit){
-  // returns value for error log
-  // 0 - ok
-  // 1 - exceeds limits
-  if (distance + current_position >= limit || distance + current_position <= 0 ) return 1;
-  if ( distance >= 0 ){
-    uint32_t steps = distance  / BASE_DEGREE_PER_STEP ;
-    CameraMotor.step(steps, FORWARD, SINGLE);
-  }
-  else {
-    uint32_t steps = -distance / BASE_DEGREE_PER_STEP ;
-    CameraMotor.step(steps, BACKWARD, SINGLE);
-  }
-  mCameraPosition += distance;
-  return 0;  
+void Scanner::releaseMotors()
+{
+  if ( DEBUG_SCANNER )Serial.println("Scanner::releaseMotors");
+  CameraMotor.release();
+  BaseMotor.release();
 }
 
 /**
@@ -289,8 +408,8 @@ uint8_t Scanner::safeMove(AF_Stepper &motor, uint32_t &current_position, uint32_
  * @param: 
  * @return: base angle in degree 
  */
-uint32_t Scanner::getBaseAngle(){
-  return baseAngle;
+int Scanner::getBaseAngle(){
+  return mBaseAngle;
 }
  /**
  * Description: return the camera's position in mm (distance covered form end-stop)
@@ -300,23 +419,28 @@ uint32_t Scanner::getBaseAngle(){
  * @param: 
  * @return: cameraPosition 
  */
-uint32_t Scanner::getCameraPosition(){
+int Scanner::getCameraPosition(){
   return mCameraPosition;
 }
 
 
  /**
- * Description: ISR - Interrupt Seervice Routine   
- *              method is "attahched" to certain interrupts pin (2 or 3 for UNO) and called with "button" to halt
- *              all execution
+ * Description: "Release" motors so the scanner mechanics doesn't apply any presure or resistance
+ *              to moving by hand.
+ *
+ *              may be called by ISR - Interrupt Seervice Routine
+ *              ("attahched" to certain interrupts pin (2 or 3 for UNO) and called with "button" to halt
+ *              all execution)
  *              
  * @Author Hagai Solodar (21/9/2016)
  * 
- * @param: ISR do not have params 
- * @return: and do not returns any values
+ * @param:
+ * @return:
  */
-void Scanner::emergencyStop(){
-;  
-
+void Scanner::emergencyStop()
+{
+  releaseMotors();
+  // Note: Maybe we need to totally disconnect
+  //   the Adafruit board from electric power.
 }
 

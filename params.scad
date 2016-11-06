@@ -95,6 +95,9 @@ bearing_h = 7;
 
 big_washer_d = 19;
 
+bearing_axis_d = bearing_in_d - 0.1;
+bearing_axis_l = 60;
+
 
 // Params for mounted camera slider:
 

@@ -499,6 +499,7 @@ module counter_weight_cart()
   }
 }
 
+
 module camera_cart()
 {
 
@@ -630,6 +631,11 @@ module cart_GT2_holes(depth=3) {
     
 }
 
+
+module bearing_axis()
+{
+  X_cylinder(bearing_axis_d/2, bearing_axis_l);
+}
 // testing:
 
 //color("black") rod_holder_ring();
@@ -670,3 +676,5 @@ camera_cart();
 
 
 //color("black") counter_weight_cart();
+
+color("white") bearing_axis();
