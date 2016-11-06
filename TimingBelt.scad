@@ -6,8 +6,7 @@ eps = 0.05;
 bigSize = 10;
 
 
-// GT2
-/*
+//GT2
 P = 2;
 R1 = 0.15;
 R2 = 1.00;
@@ -16,8 +15,8 @@ b = 0.40;
 H = 1.38;
 h = 0.75;
 i = 0.63;
-*/
 
+/*
 // GT3
 P = 3;
 R1 = 0.25;
@@ -27,7 +26,7 @@ b = 0.61;
 H = 2.40;
 h = 1.14;
 i = 1.26;
-
+*/
 
 // lego
 h1 = 7.8;
@@ -221,7 +220,6 @@ module drawHub(IsDrivePulley,diameter)
 		}
 	}
 }
-
 
 module drawPulley(diameter, IsDrivePulley=false)
 {

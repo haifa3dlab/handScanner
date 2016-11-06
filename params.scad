@@ -55,7 +55,7 @@ hand_lock_elev = 140;
 
 // Params for main rotation plate
 //   with its two rings:
-glassBall_r = 8;
+glassBall_r = 8.3;
 mainHole_r = 20;
 wall_w = 4;
 
@@ -105,11 +105,13 @@ pole_turn_tol = 0.15; // on each side
 profile2020_w = 20;
 profile2020_tol = 0; // tolerance on each side (0 is OK)
 
-M3_d = 2;
-M3hole_d = M3_d + 0.3;
+M3_d = 3;
+M3hole_d = M3_d + 0.2;
 M4_d = 4;
-M4hole_d = M4_d + 3;
+M4hole_d = M4_d + 0.3;
 hole_wall_dist = 4;
+M3_nutR = 3.1;
+M3_nut_depth = 2.6;
 
 prof2020_fasten_plate_l = hole_wall_dist + wall_w + M4hole_d;
 
@@ -122,11 +124,12 @@ fasten_plate_h = wall_w;
 
 rod_d = 8;
 rod_holder_tol = 0; // on each side
+rod_holder_fasten_block_l2 = 10;
 rod_holder_fasten_block_l = 2*hole_wall_dist +
   2*fasten_plate_hole_dist + 2*M3hole_d/2;
 rod_holder_fasten_block_w = 3*wall_w;
-rod_holder_h = 4*wall_w;
-rod_holder_fasten_h = 4*wall_w; // only the back fastener
+rod_holder_h = 3*wall_w;
+rod_holder_fasten_h = 3*wall_w; // only the back fastener
 
 camera_rod_centers_dist = 45;
 
@@ -137,7 +140,7 @@ stepper_holder_l = 4*wall_w;
 
 linear_bearing_in_d = 8;
 linear_bearing_out_d = 15;
-linear_bearing_h = 24;
+linear_bearing_h =24; // should be 24 made shorter to save printing time
 linear_bearing_holder_wall_w = 3;
 linear_bearing_holder_gap_w = 1;
 linear_bearing_holder_tol = 0; //-0.05;

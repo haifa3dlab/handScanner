@@ -12,7 +12,10 @@ TurnPlate.scad - with glass-balls
 TurnPlate_wBearings.scad - with 4 bearings  (all its params are at the beginning of the file)
 
 make_pulley.scad - very short - only to generate central pulley ("pulley.stl") for TurnPlate.scad (see command inside)
-// note: the pulley for TurnPlate_wBearings ("pulley_r35.3.stl") is generates from inside TurnPlate_wBearings.scad
+make_double_pulley.scad - very short - only to generate dual pulley for camera elevator
+// note1: Make sure TimingBelt.scad has correct GT2 GT3 parameter
+// note2: the pulley for TurnPlate_wBearings ("pulley_r35.3.stl") is generates from inside TurnPlate_wBearings.scad
+
 
 holders.scad - various small addapters and connectors for 2020-T-slot profile, 8mm rods, lower stepper,
                              linear_beraing, fasten_plates (to fasten 8mm rod holders and more), camera_cart, counter_weight_cart

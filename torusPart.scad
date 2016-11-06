@@ -9,6 +9,25 @@ module torus(bigR, cutR, fn = 50)
       $fn = fn);
 }
 
+module torusSandwitchFill(bigR, cutR, percentage_cut,fn) {
+    
+    cut_h = 2*(cutR * (percentage_cut/100.0));
+    translate([0,0, cutR-cut_h/2])
+    {
+        difference() 
+        {
+            torus(bigR, cutR, fn);
+            translate([0,0, cutR])
+               cylinder(r=bigR+cutR, h= cut_h, center=true);
+            translate([0,0, -cutR])
+            cylinder(r=bigR+cutR, h= cut_h, center=true);
+            
+        }
+    }     
+}
+
+//torusSandwitchFill(20, 5, 90, 30);
+
 module torusQuarter(bigR, cutR, add2Cube = 0, fn = 50)
 {
     intersection() {
