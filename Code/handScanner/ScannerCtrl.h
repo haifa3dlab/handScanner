@@ -1,9 +1,22 @@
 #ifndef ScannerCtrl_h
 #define ScannerCtrl_h
 
+/*
+ * Adafruit Motor shield library doc:
+ * https://learn.adafruit.com/adafruit-motor-shield
+ * https://learn.adafruit.com/adafruit-motor-shield/faq
+ * library: https://learn.adafruit.com/adafruit-motor-shield/downloads
+ */
+#include "AFMotor.h"
+
 #include "StopSensor.h"
 
-#include "AFMotor.h"
+#include "Debuggable.h"
+
+#define SEC_PER_MIN 60
+
+// For steppers we use:
+#define STEP_PER_REV 200
 
 // Base motor parameters
 #define BASE_CHANNEL 2
@@ -26,12 +39,12 @@ const float CAMERA_STEPS_PER_MM = 8.0F;
 // (de)acceleration params:
 #define CAMERA_MOUNT_RAD 275     // mm - copy from params.scad !
 
-#define STEPS_PER_ACCEL_ROUND 4
+#define STEPS_PER_ACCEL_ROUND 8
 // Max base mount tips acceleration in g - earth gravity acceleration
-const float maxAccelG = 0.01F;
+const float maxAccelG = 0.005F;
 const float gEarth = 9806.65F;    // mm/(sec^2)
 const float maxAccelDeg = (maxAccelG * gEarth) * 180.0F / (PI * CAMERA_MOUNT_RAD);  // deg/(sec^2)
-const float maxAccelBaseSteps = maxAccelDeg * BASE_STEP_PER_DEGREE;
+const float maxAccelStepsPerSqSec = maxAccelDeg * BASE_STEP_PER_DEGREE;
 
 // full scan bands:
 #define SCAN_BAND_HEIGHT_MM 50
@@ -56,7 +69,7 @@ enum errType {
 
 
 
-class Scanner
+class Scanner : public Debuggable
 {
 public:
   Scanner();
@@ -77,9 +90,11 @@ public:
 
   int getBaseAngle();
   int getCameraPosition();
-  
+
+  static float stepsPerSecToRPM(int steps_per_sec);
+
 protected:
-  int slowStartStop(AF_Stepper& motor, int fullSpeed, float accel, bool forward = true, bool speedUp = true);
+  int slowStartStop(AF_Stepper& motor, int& inout_fullSpeed, float accelStepsPerSqSec, int maxSteps, bool forward = true, bool speedUp = true);
   void ResetBaseMotor();
   void ResetCameraMotor();
   AF_Stepper CameraMotor, BaseMotor;

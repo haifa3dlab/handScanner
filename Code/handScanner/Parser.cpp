@@ -14,7 +14,7 @@
 
 
 String Parser::readStringInput(){
-  return Serial.readStringUntil(' ');
+  return pcomm->readStringUntil(' ');
 }
 
 /*
@@ -23,17 +23,18 @@ String Parser::readStringInput(){
  * 
  * 
  */
-bool Parser::Listen(int timeOut){
+bool Parser::Listen(Stream& st, int timeOut) {
+  setCommChan(st);
   int incomingByte = 555;
   mCommand = "NULL";
   mParam = "NULL";
   int timeOutCnt = timeOut;
   while (incomingByte != '#'){
-    if (Serial.available() > 0) {
-      incomingByte = Serial.read();
+    if (pcomm->available() > 0) {
+      incomingByte = pcomm->read();
     }
     if (timeOutCnt-- <= 0 ){
-      //if ( DEBUG_PARSER ) { Serial.println("TimeOut Occured (in cmd read)"); }
+      //if ( DEBUG_PARSER ) { pcomm->println("TimeOut Occured (in cmd read)"); }
       return false;
     }
   }
@@ -41,10 +42,10 @@ bool Parser::Listen(int timeOut){
   mCommand.trim();
 
   timeOutCnt = timeOut;
-  while (Serial.available() < 0)
+  while (pcomm->available() < 0)
   {
     if (timeOutCnt-- <= 0 ){
-      if ( DEBUG_PARSER ) { Serial.println("*TimeOut Occur (in param read)*"); }
+      if ( DEBUG_PARSER ) { pcomm->println(F("*TimeOut Occur (in param read)*")); }
       return false;
     }
   }
@@ -53,11 +54,10 @@ bool Parser::Listen(int timeOut){
 
   // debug
   if ( DEBUG_PARSER ) {
-    Serial.print("\nCommand Received: ");
-    Serial.print(mCommand);
-    Serial.print("\nParameter Received: ");
-    Serial.print(mParam);
-    Serial.print("\n");
+    pcomm->print(F("\nCommand Received: "));
+    pcomm->print(mCommand);
+    pcomm->print(F("\nParameter Received: "));
+    pcomm->println(mParam);
   }
   return true;
 }
@@ -66,15 +66,14 @@ void Parser::debugParserCmd(String cmdName)
 {
   if ( !(DEBUG_PARSER) ) return;
   
-  Serial.print(cmdName);
-  Serial.print(" (");
-  Serial.print(mCommand);
-  Serial.print(") ");
-  Serial.print(mParam);
-  Serial.print(" (int: ");
-  Serial.print(mParam.toInt(), DEC);
-  Serial.print(")");
-  Serial.print("\n");
+  pcomm->print(cmdName);
+  pcomm->print(F(" ("));
+  pcomm->print(mCommand);
+  pcomm->print(F(") "));
+  pcomm->print(mParam);
+  pcomm->print(F(" (int: "));
+  pcomm->print(mParam.toInt(), DEC);
+  pcomm->println(F(")"));
 }
 
 /* Description: calls the scanner command
@@ -84,9 +83,12 @@ void Parser::debugParserCmd(String cmdName)
  * 
  * example commands: "#SAS 100# #SHS 50# #DFS 1#"
  */
-uint32_t Parser::callCommand(Scanner &scanner){
+uint32_t Parser::callCommand(Scanner &scanner)
+{
+    scanner.setCommChan(*pcomm);
+    
     if ( mParam.length() <= 0 || mParam.equals("NULL") ) {
-      Serial.println("*NULL param*");
+      pcomm->println(F("*NULL param*"));
       return err_bad_param;
     }
 
@@ -94,7 +96,7 @@ uint32_t Parser::callCommand(Scanner &scanner){
         debugParserCmd("baseTurn");  
         scanner.baseTurn(mParam.toInt());
     }
-    if ( mCommand == "BTR"/*"baseTurnRel"*/){
+    else if ( mCommand == "BTR"/*"baseTurnRel"*/){
         debugParserCmd("baseTurnRel");  
         scanner.baseTurnRel(mParam.toInt());
     }
@@ -135,10 +137,10 @@ uint32_t Parser::callCommand(Scanner &scanner){
         scanner.init();     
     }
     else {
-        Serial.print("No Such Command:");
-        Serial.print("\"");
-        Serial.print(mCommand);
-        Serial.println("\"");
+        pcomm->print(F("No Such Command:"));
+        pcomm->print("\"");
+        pcomm->print(mCommand);
+        pcomm->println("\"");
         return err_bad_cmd;
     }
     return NO_VALUE;

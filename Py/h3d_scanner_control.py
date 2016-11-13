@@ -11,7 +11,22 @@ class Arduino(object):
             try:
                 pt = serial.Serial(i)
                 pt.close()
-                result.append(i)
+                result.append("COM%d" % (i+1))
+            except (OSError, serial.SerialException):
+                pass
+            # for linux ports:
+            try:
+                pname  = '/dev/ttyACM%d' % i
+                pt = serial.Serial(pname)
+                pt.close()
+                result.append(pname)
+            except (OSError, serial.SerialException):
+                pass
+            try:
+                pname  = '/dev/ttyUSB%d' % i
+                pt = serial.Serial(pname)
+                pt.close()
+                result.append(pname)
             except (OSError, serial.SerialException):
                 pass
         return result
@@ -61,8 +76,7 @@ class UI(object):
         self.ports = self.builder.get_object("ports")
         if ports:
             for p in ports:
-                com = "COM%d:" % (p + 1)
-                self.ports.append_text(com)
+                self.ports.append_text(p)
         self.ports.append_text("Offline")
         self.ports.set_active(0)
         # Initial control values
@@ -73,13 +87,23 @@ class UI(object):
 
     def onSetPort(self, *args, **kwds):
         com = self.ports.get_active_text()
-        m = re.match("COM([0-9]+):", com)
+        self.fb("onSetPort on %s" % com)
+        m = re.match("COM([0-9]+)", com)
         if m:
             p = int(m.group(1)) - 1
             self.fb("Selecting Arduino on port %s" % com)
             self.ac = Arduino(port = p)
         else:
-            self.ac = None
+          if not m:
+              m = re.match("/dev/ttyUSB([0-9]+)", com)
+          if not m:
+              m = re.match("/dev/ttyACM([0-9]+)", com)
+          if m:
+              p = m.group(0)
+              self.fb("Selecting Arduino on port %s" % com)
+              self.ac = Arduino(port = p)
+          else:
+              self.ac = None
 
     def show(self):
         self.top.show_all()

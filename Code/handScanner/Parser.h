@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include "ScannerCtrl.h"
+#include "Debuggable.h"
 
 #define NO_VALUE 800
 /*
@@ -23,13 +24,14 @@
   */
 
 const bool DEBUG_PARSER = true;
-class Parser{
-  public:
+class Parser : public Debuggable
+{
+public:
   Parser(){;}
-  bool Listen(int timeOut = 5);  //polls bytes for the # sign and calls readStringInput
+  bool Listen(Stream& st, int timeOut = 5);  //polls bytes for the # sign and calls readStringInput
   uint32_t callCommand(Scanner &scanner);
 
-  private:
+private:
   void debugParserCmd(String cmdName);
 
   String readStringInput();

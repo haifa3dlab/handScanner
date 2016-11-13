@@ -1,34 +1,49 @@
+#include <SoftwareSerial.h>  
 #include "ScannerCtrl.h"
 #include "Parser.h"
 
+int bluetoothTx =  9;  // TX-O pin of bluetooth mate, Arduino D2
+int bluetoothRx = 10;  // RX-I pin of bluetooth mate, Arduino D3
 
+SoftwareSerial bluetooth(bluetoothTx, bluetoothRx);
 
 Scanner scanner;
 Parser parser;
 int cmdDelay = 20;
 int init_flag = 1;
 
+void setupBT() {
+  bluetooth.print("$");  // Print three times individually
+  bluetooth.print("$");
+  bluetooth.print("$");  // Enter command mode
+  delay(100);  // Short delay, wait for the Mate to send back CMD
+  bluetooth.println("U,9600,N");  // Temporarily Change the baudrate to 9600, no parity
+  // 115200 can be too fast at times for NewSoftSerial to relay the data reliably
+  bluetooth.begin(9600);  // Start bluetooth serial at 9600
+}
 
 void setup() {
   Serial.begin(9600);           // set up Serial library at 9600 bps
   Serial.println("Hand Scanner Start!");
 
-  /*
-  // press button to halt everything
-  attachInterrupt(digitalPinToInterrupt(interruptPin), Scanner::emergencyStop, CHANGE);
-  */
+  setupBT();
 }
 
-void loop(){
-  uint32_t value = NO_VALUE; //NO_VALUE defined in Parser.h
+void loop()
+{
+  uint32_t value = NO_VALUE;  // NO_VALUE defined in Parser.h
   //Serial.println("New Loop: ");
-  if ( parser.Listen())
+  if ( (Serial.available() && parser.Listen(Serial)) ||
+       (bluetooth.available() && parser.Listen(bluetooth)) )
+  {
     value = parser.callCommand(scanner);
-
-  if ( value != NO_VALUE ) {
-    Serial.print("Value Recevied: ");
-    Serial.print(value);
+    
+    if ( value != NO_VALUE ) {
+      Serial.print("Command return value: ");
+      Serial.println(value);
+    }
   }
+  
   delay(cmdDelay);
 }
 
