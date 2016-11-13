@@ -18,6 +18,9 @@
 // For steppers we use:
 #define STEP_PER_REV 200
 
+// minimal speed for (de)accel:
+#define MIN_STEPS_PER_SEC 4
+
 // Base motor parameters
 #define BASE_CHANNEL 2
 #define BASE_MAX_ANGLE 300
@@ -39,12 +42,12 @@ const float CAMERA_STEPS_PER_MM = 8.0F;
 // (de)acceleration params:
 #define CAMERA_MOUNT_RAD 275     // mm - copy from params.scad !
 
-#define STEPS_PER_ACCEL_ROUND 8
+#define STEPS_PER_ACCEL_ROUND 1
 // Max base mount tips acceleration in g - earth gravity acceleration
-const float maxAccelG = 0.005F;
+const float maxAccelG = 0.001F;
 const float gEarth = 9806.65F;    // mm/(sec^2)
 const float maxAccelDeg = (maxAccelG * gEarth) * 180.0F / (PI * CAMERA_MOUNT_RAD);  // deg/(sec^2)
-const float maxAccelStepsPerSqSec = maxAccelDeg * BASE_STEP_PER_DEGREE;
+const float maxAccelStepsPerSqSec = maxAccelDeg * BASE_STEP_PER_DEGREE; // steps/(sec^2)
 
 // full scan bands:
 #define SCAN_BAND_HEIGHT_MM 50
@@ -94,7 +97,7 @@ public:
   static float stepsPerSecToRPM(int steps_per_sec);
 
 protected:
-  int slowStartStop(AF_Stepper& motor, int& inout_fullSpeed, float accelStepsPerSqSec, int maxSteps, bool forward = true, bool speedUp = true);
+  int slowStartStop(AF_Stepper& motor, int& inout_fullSpeed, float accelStepsPerSqSec, long maxSteps, bool forward = true, bool speedUp = true);
   void ResetBaseMotor();
   void ResetCameraMotor();
   AF_Stepper CameraMotor, BaseMotor;

@@ -145,13 +145,16 @@ errType Scanner::baseTurn(int toDegree){
       //return err_ok;
   }
   else {
-    int fullSpeed = angularSpeed; // may be updated by the speedUp call to slowStartStop()
-    int speedUpSteps = 0; // slowStartStop(BaseMotor, /*inout*/fullSpeed, maxAccelStepsPerSqSec, steps/2, forward, /*speedUp=*/true);
+    BaseMotor.setSpeed( round(stepsPerSecToRPM(angularSpeed)) );
+    int fullSpeed = angularSpeed; // (steps/sec) may be updated by the speedUp call to slowStartStop()
+    int speedUpSteps = slowStartStop(BaseMotor, /*inout*/fullSpeed, maxAccelStepsPerSqSec, steps/2, forward, /*speedUp=*/true);
     
     int fullSpeedSteps = steps - 2*speedUpSteps;
     if (fullSpeedSteps > 0) {
-      BaseMotor.setSpeed( round(stepsPerSecToRPM(fullSpeed)) );
+      if (fullSpeed < angularSpeed)
+        BaseMotor.setSpeed( round(stepsPerSecToRPM(fullSpeed)) );
       BaseMotor.step(fullSpeedSteps, (forward ? FORWARD : BACKWARD), SINGLE);
+      //BaseMotor.step(fullSpeedSteps * MICROSTEPS, (forward ? FORWARD : BACKWARD), MICROSTEP);
     } else {
       pcomm->print(F("Acceleration and de-acceleration takes to much, remaining steps: "));
       pcomm->println(speedUpSteps, DEC);
@@ -244,6 +247,7 @@ errType Scanner::cameraMove(int toPos){
     pcomm->print(F("Camera Position: "));
     pcomm->println(mCameraPosition, DEC);
   }
+  CameraMotor.release();
   return err_ok;
 }
 
@@ -310,22 +314,26 @@ static long diffMicros(long endMicros, long startMicros)
  *
  * Constants: STEPS_PER_ACCEL_ROUND
  */
-int Scanner::slowStartStop(AF_Stepper& motor, int& inout_fullSpeed, float accelStepsPerSqSec, int maxSteps, bool forward/*=true*/, bool speedUp/*=true*/)
+int Scanner::slowStartStop(AF_Stepper& motor, int& inout_fullSpeed, float accelStepsPerSqSec, long maxSteps, bool forward/*=true*/, bool speedUp/*=true*/)
 {
-  if ( DEBUG_SCANNER ) { pcomm->println("Scanner::slowStartStop"); }
-  long start_us, curr_us, prev_us;
-  long diff_us, expected_us, remains_us;
-  int startSpeed, trgSpeed, currSpeed, diffSpeed;
-  int stepsToDo, stepCnt = 0;
+  if ( DEBUG_SCANNER ) { pcomm->println("sSS"/*"Scanner::slowStartStop"*/); }
+  long curr_us, prev_us;
+  long diff_us, expected_us, remains_us = 0;
+  float cumul_us = 0.0F;
+  long startSpeed, trgSpeed, currSpeed, diffSpeed;
+  long stepCnt = 0;
+
+  accelStepsPerSqSec *= MICROSTEPS;
+  maxSteps *= MICROSTEPS;
 
   if (speedUp) {
-    startSpeed = 4; // first faze - min possible speed
-    trgSpeed = inout_fullSpeed;
+    startSpeed = MIN_STEPS_PER_SEC; // first faze - min possible speed
+    trgSpeed = inout_fullSpeed * MICROSTEPS;
   } else {
-    startSpeed = inout_fullSpeed;
+    startSpeed = inout_fullSpeed * MICROSTEPS;
     trgSpeed = 0;
   }
-
+/*
   if (DEBUG_SCANNER) {
     pcomm->print(speedUp ? F("Accelerate ") : F("De-accelerate"));
     pcomm->print(F("from startSpeed "));
@@ -337,62 +345,81 @@ int Scanner::slowStartStop(AF_Stepper& motor, int& inout_fullSpeed, float accelS
     pcomm->print(F(" (steps/sec^2) in maxSteps "));
     pcomm->println(maxSteps);    
   }
-
+*/
   currSpeed = startSpeed;
-  start_us = micros();
-  while( (speedUp ? currSpeed <= trgSpeed : currSpeed > trgSpeed) &&  
-         stepCnt <= maxSteps )
+  curr_us = micros();
+  while( (speedUp ? currSpeed < trgSpeed : currSpeed > trgSpeed) &&
+         stepCnt < maxSteps )
   {
-    if (maxSteps - stepCnt >= STEPS_PER_ACCEL_ROUND)
-      stepsToDo = STEPS_PER_ACCEL_ROUND;
-    else
-      stepsToDo = maxSteps - stepCnt;
-    expected_us = round((float)stepsToDo * 1000000.0F / currSpeed); 
+    expected_us = 1000000L / currSpeed;
 
-    motor.setSpeed( round(stepsPerSecToRPM(currSpeed)) );
-    motor.step(stepsToDo, (forward ? FORWARD : BACKWARD), SINGLE);
-
-    stepCnt += stepsToDo;
+    motor.onestep((forward ? FORWARD : BACKWARD), MICROSTEP);
+    ++stepCnt;
+/*
+if (DEBUG_SCANNER) {
+  pcomm->print("remains_us = ");
+  pcomm->print(remains_us);
+  pcomm->print(", expected_us = ");
+  pcomm->print(expected_us);
+  pcomm->print(", cumul_us = ");
+  pcomm->print(cumul_us, 0);
+  pcomm->print(", currSpeed = ");
+  pcomm->println(currSpeed);
+}
+*/
     prev_us = curr_us;
     curr_us = micros();
     diff_us = diffMicros(curr_us, prev_us);
 
-    remains_us = diff_us - expected_us;  // last step may be:(diff_us / (STEPS_PER_ACCEL_ROUND - 1));
+    remains_us = expected_us - diff_us;  // last step may be:(diff_us / (STEPS_PER_ACCEL_ROUND - 1));
     if (remains_us > 0L)
       delayMicroseconds(remains_us);
 
     // calc new currSpeed
-    diff_us = diffMicros(curr_us, start_us);
-    diffSpeed = round((diff_us + remains_us) * accelStepsPerSqSec / 1000000.0F);
+    cumul_us += expected_us;
+    diffSpeed = round(cumul_us * accelStepsPerSqSec / 1000000.0F);
 
     if (speedUp) {
       currSpeed = diffSpeed;
-      if (diffSpeed > inout_fullSpeed)
-        diffSpeed > inout_fullSpeed;
+      if (currSpeed > trgSpeed)
+        currSpeed = trgSpeed;
     } else {
-      currSpeed = inout_fullSpeed - diffSpeed;
+      currSpeed = startSpeed - diffSpeed;
       if (currSpeed < 0)
         break;
     }
   }
 
+  // Don't stay in MICROSTEP mode after stop (speed-down):
+  if ( !speedUp ) {
+    motor.release();
+    // or:
+    //motor.onestep((forward ? FORWARD : BACKWARD), SINGLE);
+    // or:
+    //motor.setSpeed( round(stepsPerSecToRPM(MIN_STEPS_PER_SEC)) ); // set minimal speed
+    //motor.step( (stepCnt % MICROSTEPS), (forward ? FORWARD : BACKWARD), MICROSTEP); // finish last full step
+  }
+
   // If we didn't reach fullSpeed in allowed number of steps,
   //   return the speed we reached in fullSpeed var: 
-  if (speedUp && currSpeed < inout_fullSpeed ) {
-    inout_fullSpeed = currSpeed;
+  if (speedUp && currSpeed < trgSpeed) {
+    inout_fullSpeed = currSpeed / MICROSTEPS;
+    /*
     if (DEBUG_SCANNER) {
       pcomm->print(F("Reached only speed of "));
       pcomm->print(currSpeed);
       pcomm->println(F("(stepa/sec)"));
     }
+    */
   }
-
+/*
   if (DEBUG_SCANNER) {
       pcomm->print(F("slowStartStop did use "));
       pcomm->print(stepCnt);
       pcomm->println(F(" steps."));
   }
-  return stepCnt;
+*/
+  return stepCnt / MICROSTEPS;
 }
 
 

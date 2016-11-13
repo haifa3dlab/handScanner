@@ -462,6 +462,10 @@ AF_Stepper::AF_Stepper(uint16_t steps, uint8_t num) {
 
 void AF_Stepper::setSpeed(uint16_t rpm) {
   usperstep = 60000000 / ((uint32_t)revsteps * (uint32_t)rpm);
+#ifdef MOTORDEBUG
+  Serial.print("AF_Stepper::setSpeed(): usperstep = ");
+  Serial.println(usperstep);
+#endif
   steppingcounter = 0;
 }
 
