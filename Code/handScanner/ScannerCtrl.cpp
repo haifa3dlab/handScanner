@@ -250,7 +250,7 @@ uint8_t Scanner::doFullScan()
     baseTurn(0);
 
     for ( nextCameraPos += SCAN_BAND_HEIGHT_MM;
-          nextCameraPos <= fullScanMaxDist;
+          nextCameraPos < fullScanMaxDist;
           nextCameraPos += SCAN_BAND_HEIGHT_MM)
     {
       if ( baseTurn( (baseAngle < (fullScanMaxDeg + fullScanMinDeg)/2) ? fullScanMaxDeg : fullScanMinDeg) != 0) 

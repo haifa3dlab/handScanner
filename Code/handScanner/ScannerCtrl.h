@@ -12,7 +12,7 @@ const float BASE_STEP_PER_DEGREE = 7.47;
 
 // Camera motor parameters
 #define CAMERA_CHANNEL 1
-#define CAMERA_MAX_DIST 350
+#define CAMERA_MAX_DIST 212
 const float CAMERA_STEPS_PER_MM = 8;
 
 // End-Stop - limit switches PINs
@@ -24,11 +24,11 @@ const float CAMERA_STEPS_PER_MM = 8;
 #define HEIGHT_MAX_STEPS 0 //1000, 0 - for now without StopSensors
 
 // full scan bands:
-#define SCAN_BAND_HEIGHT_MM 50
+#define SCAN_BAND_HEIGHT_MM 80
 const int fullScanMinDeg = 0;
 const int fullScanMaxDeg = BASE_MAX_ANGLE;
 const int fullScanMinDist = 0;
-const int fullScanMaxDist = CAMERA_MAX_DIST;
+const int fullScanMaxDist = 85;
 
 // Interrupts for emergency stop
 #define interruptPin 2
